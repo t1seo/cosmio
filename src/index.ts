@@ -1,4 +1,90 @@
-// Cosmio — CLI entry point
-// Will be implemented in Phase 0.9 (Task #16)
+#!/usr/bin/env node
 
-console.log('cosmio v0.1.0');
+/**
+ * Cosmio CLI — Transform GitHub contribution data into space-themed animated SVGs
+ */
+
+import { Command } from 'commander';
+import { writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
+
+import type { CliOptions } from './core/types.js';
+import { fetchContributions } from './api/client.js';
+import { computeStats } from './core/stats.js';
+import { getTheme, listThemes, getDefaultTheme } from './themes/registry.js';
+
+// Import theme modules to trigger self-registration
+import './themes/nebula/index.js';
+// Future: import './themes/constellation/index.js';
+// Future: import './themes/voyage/index.js';
+// Future: import './themes/defense/index.js';
+
+const program = new Command();
+
+program
+  .name('cosmio')
+  .description('Transform GitHub contribution data into space-themed animated SVGs')
+  .version('0.1.0')
+  .requiredOption('-u, --user <username>', 'GitHub username')
+  .option('-t, --theme <name>', 'Theme name', getDefaultTheme())
+  .option('--title <text>', 'Custom title text')
+  .option('-o, --output <dir>', 'Output directory', './')
+  .option('-y, --year <number>', 'Year to visualize', String(new Date().getFullYear()))
+  .option('--token <token>', 'GitHub personal access token (or use GITHUB_TOKEN env)')
+  .action(async (opts) => {
+    const options: CliOptions = {
+      user: opts.user,
+      theme: opts.theme,
+      title: opts.title || `@${opts.user}`,
+      output: opts.output,
+      year: parseInt(opts.year, 10),
+      token: opts.token || process.env.GITHUB_TOKEN,
+    };
+
+    // Validate theme exists
+    const theme = getTheme(options.theme);
+    if (!theme) {
+      console.error(`Error: Unknown theme "${options.theme}"`);
+      console.error(`Available themes: ${listThemes().join(', ')}`);
+      process.exit(1);
+    }
+
+    try {
+      console.log(`Fetching contributions for @${options.user} (${options.year})...`);
+
+      // Fetch contribution data
+      const data = await fetchContributions(options.user, options.year, options.token);
+
+      // Compute stats
+      const stats = computeStats(data.weeks);
+      const fullData = { ...data, stats };
+
+      console.log(`Rendering with ${theme.displayName} theme...`);
+
+      // Render SVGs
+      const output = theme.render(fullData, {
+        title: options.title,
+        width: 840,
+        height: 240,
+      });
+
+      // Write output files
+      const darkPath = join(options.output, `cosmio-${options.theme}-dark.svg`);
+      const lightPath = join(options.output, `cosmio-${options.theme}-light.svg`);
+
+      await writeFile(darkPath, output.dark, 'utf-8');
+      await writeFile(lightPath, output.light, 'utf-8');
+
+      console.log(`Written: ${darkPath}`);
+      console.log(`Written: ${lightPath}`);
+    } catch (error) {
+      if (error instanceof Error) {
+        console.error(`Error: ${error.message}`);
+      } else {
+        console.error(`Error: ${String(error)}`);
+      }
+      process.exit(1);
+    }
+  });
+
+program.parse();
