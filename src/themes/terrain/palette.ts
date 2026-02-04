@@ -85,6 +85,15 @@ export interface AssetColors {
   scarecrow: string;
   scarecrowHat: string;
   stump: string;
+  riverOverlay: string;
+  pondOverlay: string;
+  reeds: string;
+  fountain: string;
+  fountainWater: string;
+  canal: string;
+  gardenTree: string;
+  ricePaddy: string;
+  ricePaddyWater: string;
 }
 
 /** A color anchor point for interpolation */
@@ -171,50 +180,55 @@ function makeElevation(rgb: RGB): ElevationColors {
 // ── Dark Mode Anchors ────────────────────────────────────────
 
 const DARK_COLOR_ANCHORS: ColorAnchor[] = [
-  { level: 0,  rgb: [25, 60, 110] },     // Deep ocean
-  { level: 5,  rgb: [40, 90, 145] },      // Shallow water
-  { level: 8,  rgb: [80, 130, 100] },     // Tidal zone
-  { level: 12, rgb: [130, 160, 95] },     // Sandy shore
-  { level: 18, rgb: [100, 150, 65] },     // Coastal grass
-  { level: 30, rgb: [60, 125, 45] },      // Grassland
-  { level: 45, rgb: [45, 110, 38] },      // Forest
-  { level: 60, rgb: [55, 115, 42] },      // Dense forest
-  { level: 72, rgb: [140, 130, 65] },     // Farmland
-  { level: 82, rgb: [125, 110, 58] },     // Village outskirts
-  { level: 92, rgb: [115, 90, 52] },      // Town
-  { level: 99, rgb: [95, 75, 48] },       // City center
+  { level: 0,  rgb: [160, 130, 90] },     // Desert sand
+  { level: 4,  rgb: [140, 120, 85] },     // Dry earth
+  { level: 8,  rgb: [100, 115, 100] },    // Scrubland
+  { level: 12, rgb: [40, 80, 130] },      // Shallow water / oasis
+  { level: 18, rgb: [30, 70, 120] },      // Deeper water
+  { level: 24, rgb: [80, 130, 95] },      // Wetland shore
+  { level: 30, rgb: [130, 160, 90] },     // Grassland
+  { level: 40, rgb: [90, 145, 60] },      // Lush grass
+  { level: 52, rgb: [55, 120, 42] },      // Forest
+  { level: 65, rgb: [45, 105, 38] },      // Dense forest
+  { level: 75, rgb: [90, 140, 55] },      // Rich green farmland
+  { level: 85, rgb: [80, 125, 50] },      // Village green
+  { level: 93, rgb: [70, 110, 52] },      // Town with parks
+  { level: 99, rgb: [65, 100, 55] },      // Lush city
 ];
 
 const DARK_HEIGHT_ANCHORS: HeightAnchor[] = [
   { level: 0,  height: 0 },
-  { level: 5,  height: 0 },
-  { level: 8,  height: 1 },
-  { level: 12, height: 3 },
-  { level: 20, height: 5 },
-  { level: 35, height: 7 },
-  { level: 50, height: 10 },
-  { level: 65, height: 13 },
-  { level: 78, height: 16 },
-  { level: 88, height: 19 },
-  { level: 95, height: 22 },
+  { level: 8,  height: 0 },
+  { level: 12, height: 0 },    // Water: flat
+  { level: 18, height: 0 },
+  { level: 24, height: 1 },
+  { level: 30, height: 3 },
+  { level: 40, height: 5 },
+  { level: 52, height: 8 },
+  { level: 65, height: 11 },
+  { level: 75, height: 14 },
+  { level: 85, height: 18 },
+  { level: 93, height: 21 },
   { level: 99, height: 24 },
 ];
 
 // ── Light Mode Anchors ───────────────────────────────────────
 
 const LIGHT_COLOR_ANCHORS: ColorAnchor[] = [
-  { level: 0,  rgb: [90, 148, 205] },     // Deep ocean
-  { level: 5,  rgb: [110, 168, 215] },    // Shallow water
-  { level: 8,  rgb: [120, 170, 150] },    // Tidal zone
-  { level: 12, rgb: [155, 188, 115] },    // Sandy shore
-  { level: 18, rgb: [120, 170, 80] },     // Coastal grass
-  { level: 30, rgb: [85, 155, 65] },      // Grassland
-  { level: 45, rgb: [70, 140, 55] },      // Forest
-  { level: 60, rgb: [80, 145, 60] },      // Dense forest
-  { level: 72, rgb: [170, 160, 85] },     // Farmland
-  { level: 82, rgb: [155, 140, 75] },     // Village outskirts
-  { level: 92, rgb: [140, 115, 70] },     // Town
-  { level: 99, rgb: [120, 95, 60] },      // City center
+  { level: 0,  rgb: [195, 170, 130] },    // Desert sand
+  { level: 4,  rgb: [180, 158, 120] },    // Dry earth
+  { level: 8,  rgb: [145, 155, 135] },    // Scrubland
+  { level: 12, rgb: [100, 160, 210] },    // Shallow water / oasis
+  { level: 18, rgb: [85, 148, 200] },     // Deeper water
+  { level: 24, rgb: [120, 168, 140] },    // Wetland shore
+  { level: 30, rgb: [160, 195, 115] },    // Grassland
+  { level: 40, rgb: [115, 175, 80] },     // Lush grass
+  { level: 52, rgb: [75, 150, 58] },      // Forest
+  { level: 65, rgb: [65, 135, 52] },      // Dense forest
+  { level: 75, rgb: [115, 170, 75] },     // Rich green farmland
+  { level: 85, rgb: [100, 155, 68] },     // Village green
+  { level: 93, rgb: [90, 140, 65] },      // Town with parks
+  { level: 99, rgb: [80, 128, 62] },      // Lush city
 ];
 
 const LIGHT_HEIGHT_ANCHORS: HeightAnchor[] = DARK_HEIGHT_ANCHORS;
@@ -286,6 +300,15 @@ const DARK_ASSETS: AssetColors = {
   scarecrow: '#8a7040',
   scarecrowHat: '#5a4020',
   stump: '#6b4a26',
+  riverOverlay: 'rgba(35,85,160,0.60)',
+  pondOverlay: 'rgba(25,75,150,0.65)',
+  reeds: '#6a8838',
+  fountain: '#909090',
+  fountainWater: '#70a8d0',
+  canal: '#7a7a6a',
+  gardenTree: '#4a9a3a',
+  ricePaddy: '#8aaa48',
+  ricePaddyWater: '#4a88b0',
 };
 
 const LIGHT_ASSETS: AssetColors = {
@@ -353,6 +376,15 @@ const LIGHT_ASSETS: AssetColors = {
   scarecrow: '#9a8050',
   scarecrowHat: '#6a5030',
   stump: '#7a5a30',
+  riverOverlay: 'rgba(60,130,210,0.55)',
+  pondOverlay: 'rgba(50,120,200,0.60)',
+  reeds: '#7a9848',
+  fountain: '#a0a0a0',
+  fountainWater: '#80b8e0',
+  canal: '#8a8a7a',
+  gardenTree: '#55aa45',
+  ricePaddy: '#9aba58',
+  ricePaddyWater: '#5a98c0',
 };
 
 // ── Palette Factory ──────────────────────────────────────────

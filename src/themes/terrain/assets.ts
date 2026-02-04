@@ -1,5 +1,6 @@
 import type { IsoCell } from './blocks.js';
 import type { TerrainPalette100, AssetColors } from './palette.js';
+import type { BiomeContext } from './biomes.js';
 import { seededRandom } from '../../utils/math.js';
 
 // ── Asset Type Definitions (38 total) ───────────────────────
@@ -14,11 +15,13 @@ type AssetType =
   // Forest (31–60)
   | 'willow' | 'palm' | 'bird'
   // Farm (61–80)
-  | 'wheat' | 'fence' | 'scarecrow' | 'barn' | 'sheep' | 'cow' | 'chicken' | 'horse'
+  | 'wheat' | 'fence' | 'scarecrow' | 'barn' | 'sheep' | 'cow' | 'chicken' | 'horse' | 'ricePaddy'
   // Village (81–90)
   | 'tent' | 'hut' | 'house' | 'houseB' | 'church' | 'windmill' | 'well'
   // Town (91–99)
   | 'market' | 'inn' | 'blacksmith' | 'castle' | 'tower' | 'bridge'
+  // Biome blend
+  | 'reeds' | 'fountain' | 'canal' | 'watermill' | 'gardenTree' | 'pondLily'
   // Cross-level decorations
   | 'cart' | 'barrel' | 'torch' | 'flag' | 'cobblePath' | 'smoke';
 
@@ -39,21 +42,79 @@ interface AssetPool {
 }
 
 function getLevelPool100(level: number): AssetPool {
-  if (level <= 5)  return { types: ['whale', 'fish', 'fishSchool', 'boat', 'seagull', 'dock', 'waves'], chance: 0.16 };
-  if (level <= 10) return { types: ['rock', 'boulder', 'flower', 'bush'], chance: 0.14 };
-  if (level <= 15) return { types: ['bush', 'flower', 'rock', 'boulder'], chance: 0.18 };
-  if (level <= 22) return { types: ['pine', 'deciduous', 'bush', 'mushroom', 'flower'], chance: 0.20 };
-  if (level <= 30) return { types: ['pine', 'deciduous', 'stump', 'deer', 'mushroom', 'bush'], chance: 0.24 };
-  if (level <= 40) return { types: ['pine', 'pine', 'deciduous', 'willow', 'bird', 'bush'], chance: 0.30 };
-  if (level <= 50) return { types: ['pine', 'deciduous', 'willow', 'palm', 'bird', 'pine'], chance: 0.32 };
-  if (level <= 60) return { types: ['deciduous', 'willow', 'pine', 'palm', 'bird', 'stump'], chance: 0.28 };
-  if (level <= 65) return { types: ['wheat', 'fence', 'sheep', 'chicken', 'bush'], chance: 0.30 };
-  if (level <= 72) return { types: ['wheat', 'fence', 'scarecrow', 'cow', 'sheep', 'chicken', 'horse'], chance: 0.35 };
-  if (level <= 80) return { types: ['barn', 'sheep', 'cow', 'horse', 'wheat', 'fence', 'chicken', 'cart'], chance: 0.38 };
-  if (level <= 85) return { types: ['tent', 'hut', 'house', 'well', 'fence', 'sheep', 'barrel'], chance: 0.38 };
+  // Desert (0–8): barren, rocks, occasional cactus-like features
+  if (level <= 4)  return { types: ['rock', 'boulder', 'stump'], chance: 0.06 };
+  if (level <= 8)  return { types: ['rock', 'boulder', 'bush', 'stump'], chance: 0.10 };
+  // Water / Oasis (9–22): aquatic life
+  if (level <= 14) return { types: ['whale', 'fish', 'fishSchool', 'boat', 'seagull', 'dock', 'waves'], chance: 0.16 };
+  if (level <= 22) return { types: ['fish', 'fishSchool', 'boat', 'seagull', 'waves', 'dock'], chance: 0.18 };
+  // Shore / Wetland (23–30): transition to green
+  if (level <= 27) return { types: ['rock', 'boulder', 'flower', 'bush', 'bird'], chance: 0.16 };
+  if (level <= 30) return { types: ['bush', 'flower', 'rock', 'fence'], chance: 0.18 };
+  // Grassland (31–42): open plains
+  if (level <= 36) return { types: ['bush', 'flower', 'mushroom', 'deer', 'bird'], chance: 0.22 };
+  if (level <= 42) return { types: ['pine', 'deciduous', 'bush', 'mushroom', 'flower', 'deer'], chance: 0.25 };
+  // Forest (43–65): dense green
+  if (level <= 52) return { types: ['pine', 'pine', 'deciduous', 'willow', 'bird', 'bush'], chance: 0.30 };
+  if (level <= 58) return { types: ['pine', 'deciduous', 'willow', 'palm', 'bird', 'pine', 'stump'], chance: 0.32 };
+  if (level <= 65) return { types: ['deciduous', 'willow', 'pine', 'palm', 'bird', 'mushroom'], chance: 0.28 };
+  // Farm (66–78): livestock + crops
+  if (level <= 70) return { types: ['wheat', 'fence', 'sheep', 'chicken', 'bush', 'ricePaddy'], chance: 0.30 };
+  if (level <= 75) return { types: ['wheat', 'fence', 'scarecrow', 'cow', 'sheep', 'chicken', 'horse', 'ricePaddy'], chance: 0.35 };
+  if (level <= 78) return { types: ['barn', 'sheep', 'cow', 'horse', 'wheat', 'fence', 'chicken', 'cart', 'ricePaddy'], chance: 0.38 };
+  // Village (79–90): buildings emerge
+  if (level <= 84) return { types: ['tent', 'hut', 'house', 'well', 'fence', 'sheep', 'barrel'], chance: 0.38 };
   if (level <= 90) return { types: ['house', 'houseB', 'church', 'windmill', 'well', 'barrel', 'torch'], chance: 0.42 };
-  if (level <= 95) return { types: ['house', 'houseB', 'market', 'inn', 'windmill', 'flag', 'cobblePath', 'torch'], chance: 0.48 };
-  return { types: ['castle', 'tower', 'church', 'market', 'inn', 'blacksmith', 'bridge', 'flag', 'cobblePath'], chance: 0.55 };
+  // Town / City (91–99): dense civilization with nature
+  if (level <= 95) return { types: ['house', 'houseB', 'market', 'inn', 'windmill', 'flag', 'cobblePath', 'torch', 'gardenTree', 'flower', 'bush'], chance: 0.48 };
+  return { types: ['castle', 'tower', 'church', 'market', 'inn', 'blacksmith', 'bridge', 'flag', 'cobblePath', 'gardenTree', 'flower', 'fountain'], chance: 0.55 };
+}
+
+// ── Biome-Aware Blending ─────────────────────────────────────
+
+function blendWithBiome(pool: AssetPool, ctx: BiomeContext, level: number): AssetPool {
+  const types = [...pool.types];
+  let chance = pool.chance;
+
+  if (ctx.isRiver) {
+    // River cells get water assets adapted to surrounding level
+    if (level >= 91)      types.push('bridge', 'canal');
+    else if (level >= 66) types.push('watermill', 'canal', 'reeds');
+    else if (level >= 31) types.push('reeds', 'reeds', 'willow');
+    else                  types.push('reeds', 'pondLily');
+    chance = Math.max(chance, 0.35);
+  } else if (ctx.isPond) {
+    // Pond cells get pond-specific decorations
+    if (level >= 79) types.push('fountain', 'pondLily', 'reeds');
+    else             types.push('pondLily', 'pondLily', 'reeds');
+    chance = Math.max(chance, 0.30);
+  } else if (ctx.nearWater) {
+    // Adjacent to water: edge vegetation
+    if (level >= 79) types.push('fountain', 'gardenTree');
+    else             types.push('willow', 'reeds', 'bush');
+    chance += 0.05;
+  }
+
+  if (ctx.forestDensity > 0.3) {
+    // Forest overlay: add trees adapted to the level
+    const treesToAdd = ctx.forestDensity > 0.6 ? 3 : 1;
+    for (let i = 0; i < treesToAdd; i++) {
+      if (level >= 91)      types.push('gardenTree', 'flower');
+      else if (level >= 79) types.push('gardenTree');
+      else if (level >= 43) types.push('pine', 'deciduous');
+      else                  types.push('pine');
+    }
+    chance += ctx.forestDensity * 0.08;
+  }
+
+  // Unconditional high-level greenery: towns and cities always get some nature
+  if (level >= 96) {
+    types.push('gardenTree', 'fountain');
+  } else if (level >= 91) {
+    types.push('gardenTree');
+  }
+
+  return { types, chance: Math.min(chance, 0.65) };
 }
 
 // ── Neighbor Richness ───────────────────────────────────────
@@ -78,7 +139,11 @@ function computeRichness(cell: IsoCell, cellMap: Map<string, IsoCell>): number {
 
 // ── Asset Selection ─────────────────────────────────────────
 
-export function selectAssets(isoCells: IsoCell[], seed: number): PlacedAsset[] {
+export function selectAssets(
+  isoCells: IsoCell[],
+  seed: number,
+  biomeMap?: Map<string, BiomeContext>,
+): PlacedAsset[] {
   const rng = seededRandom(seed);
   const assets: PlacedAsset[] = [];
   const smokeBudget = { remaining: 5 };
@@ -89,7 +154,10 @@ export function selectAssets(isoCells: IsoCell[], seed: number): PlacedAsset[] {
   }
 
   for (const cell of isoCells) {
-    const pool = getLevelPool100(cell.level100);
+    let pool = getLevelPool100(cell.level100);
+    const biomeCtx = biomeMap?.get(`${cell.week},${cell.day}`);
+    if (biomeCtx) pool = blendWithBiome(pool, biomeCtx, cell.level100);
+
     const richness = computeRichness(cell, cellMap);
     const finalChance = pool.chance + richness * 0.20;
 
@@ -341,12 +409,27 @@ function svgBarn(x: number, y: number, c: AssetColors): string {
 }
 
 function svgSheep(x: number, y: number, c: AssetColors): string {
-  // Redesigned: rounder fluffy body (circle, not ellipse)
+  // Fluffy multi-bump wool body with detailed head and 4 legs
   return `<g transform="translate(${x},${y})">`
-    + `<circle cx="0" cy="-1.8" r="2" fill="${c.sheep}"/>`
-    + `<circle cx="-1.5" cy="-2.5" r="0.8" fill="${c.sheepHead}"/>`
-    + `<line x1="-1" y1="0" x2="-1" y2="0.3" stroke="${c.sheepHead}" stroke-width="0.35"/>`
-    + `<line x1="1" y1="0" x2="1" y2="0.3" stroke="${c.sheepHead}" stroke-width="0.35"/>`
+    // Wool body: 5 overlapping circles for fluffy texture
+    + `<circle cx="0" cy="-2" r="1.6" fill="${c.sheep}"/>`
+    + `<circle cx="-1.2" cy="-2.2" r="1.3" fill="${c.sheep}"/>`
+    + `<circle cx="1.2" cy="-2.2" r="1.3" fill="${c.sheep}"/>`
+    + `<circle cx="-0.5" cy="-3" r="1.1" fill="${c.sheep}"/>`
+    + `<circle cx="0.6" cy="-3" r="1.1" fill="${c.sheep}"/>`
+    // Head with elliptical snout extending left
+    + `<circle cx="-2" cy="-2.8" r="0.9" fill="${c.sheepHead}"/>`
+    + `<ellipse cx="-2.8" cy="-2.6" rx="0.6" ry="0.4" fill="${c.sheepHead}"/>`
+    // Ears (angled)
+    + `<ellipse cx="-1.5" cy="-3.7" rx="0.3" ry="0.5" fill="${c.sheepHead}" transform="rotate(-20 -1.5 -3.7)"/>`
+    + `<ellipse cx="-2.3" cy="-3.6" rx="0.3" ry="0.5" fill="${c.sheepHead}" transform="rotate(15 -2.3 -3.6)"/>`
+    // Eye
+    + `<circle cx="-2.1" cy="-3" r="0.15" fill="#fff"/>`
+    // 4 legs
+    + `<line x1="-1.2" y1="-0.8" x2="-1.2" y2="0.3" stroke="${c.sheepHead}" stroke-width="0.35"/>`
+    + `<line x1="-0.3" y1="-0.6" x2="-0.3" y2="0.3" stroke="${c.sheepHead}" stroke-width="0.35"/>`
+    + `<line x1="0.5" y1="-0.6" x2="0.5" y2="0.3" stroke="${c.sheepHead}" stroke-width="0.35"/>`
+    + `<line x1="1.2" y1="-0.8" x2="1.2" y2="0.3" stroke="${c.sheepHead}" stroke-width="0.35"/>`
     + `</g>`;
 }
 
@@ -389,6 +472,25 @@ function svgHorse(x: number, y: number, c: AssetColors): string {
     + `<line x1="1" y1="-1" x2="1" y2="0" stroke="${c.horse}" stroke-width="0.4"/>`
     // Tail
     + `<path d="M2.5,-2.5 Q3.5,-3 3,-1.5" stroke="${c.horse}" fill="none" stroke-width="0.4"/>`
+    + `</g>`;
+}
+
+function svgRicePaddy(x: number, y: number, c: AssetColors): string {
+  // Isometric parallelogram terrace with water fill and rice plant stubs
+  return `<g transform="translate(${x},${y})">`
+    // Terrace edge (outer parallelogram)
+    + `<polygon points="-4,-1 0,-3 4,-1 0,1" fill="${c.ricePaddy}" stroke="${c.ricePaddy}" stroke-width="0.3"/>`
+    // Inner water fill
+    + `<polygon points="-3,-0.8 0,-2.4 3,-0.8 0,0.6" fill="${c.ricePaddyWater}" opacity="0.6"/>`
+    // Reflection lines
+    + `<line x1="-1.5" y1="-0.6" x2="1.5" y2="-1.8" stroke="#fff" stroke-width="0.2" opacity="0.25"/>`
+    + `<line x1="-1" y1="0" x2="2" y2="-1.2" stroke="#fff" stroke-width="0.2" opacity="0.2"/>`
+    + `<line x1="-2" y1="-0.3" x2="1" y2="-1.5" stroke="#fff" stroke-width="0.2" opacity="0.15"/>`
+    // Rice plant stubs along edges
+    + `<line x1="-2.5" y1="-0.5" x2="-2.5" y2="-2" stroke="${c.reeds}" stroke-width="0.3"/>`
+    + `<line x1="-0.8" y1="-1.8" x2="-0.8" y2="-3.3" stroke="${c.reeds}" stroke-width="0.3"/>`
+    + `<line x1="1" y1="-1.5" x2="1" y2="-3" stroke="${c.reeds}" stroke-width="0.3"/>`
+    + `<line x1="2.5" y1="-0.5" x2="2.5" y2="-2" stroke="${c.reeds}" stroke-width="0.3"/>`
     + `</g>`;
 }
 
@@ -577,6 +679,66 @@ function svgSmoke(x: number, y: number, c: AssetColors): string {
     + `</g>`;
 }
 
+// Biome blend assets
+
+function svgReeds(x: number, y: number, c: AssetColors): string {
+  return `<g transform="translate(${x},${y})">`
+    + `<line x1="-1" y1="0" x2="-1.3" y2="-4" stroke="${c.reeds}" stroke-width="0.4"/>`
+    + `<line x1="0" y1="0" x2="0.2" y2="-4.5" stroke="${c.reeds}" stroke-width="0.4"/>`
+    + `<line x1="1" y1="0" x2="0.8" y2="-3.8" stroke="${c.reeds}" stroke-width="0.4"/>`
+    + `<ellipse cx="-1.3" cy="-4.3" rx="0.3" ry="0.8" fill="${c.trunk}"/>`
+    + `<ellipse cx="0.2" cy="-4.8" rx="0.3" ry="0.8" fill="${c.trunk}"/>`
+    + `</g>`;
+}
+
+function svgFountain(x: number, y: number, c: AssetColors): string {
+  return `<g transform="translate(${x},${y})">`
+    + `<ellipse cx="0" cy="-0.5" rx="2.5" ry="1" fill="${c.fountain}" stroke="${c.boulder}" stroke-width="0.3"/>`
+    + `<ellipse cx="0" cy="-0.3" rx="2" ry="0.7" fill="${c.fountainWater}" opacity="0.6"/>`
+    + `<rect x="-0.4" y="-3" width="0.8" height="2.5" fill="${c.fountain}"/>`
+    + `<line x1="0" y1="-3" x2="0" y2="-4.5" stroke="${c.fountainWater}" stroke-width="0.4" opacity="0.7">`
+    + `<animate attributeName="y2" values="-4.5;-5.2;-4.5" dur="2s" repeatCount="indefinite"/>`
+    + `</line>`
+    + `<circle cx="-0.5" cy="-3.5" r="0.3" fill="${c.fountainWater}" opacity="0.4"/>`
+    + `<circle cx="0.5" cy="-3.8" r="0.3" fill="${c.fountainWater}" opacity="0.4"/>`
+    + `</g>`;
+}
+
+function svgCanal(x: number, y: number, c: AssetColors): string {
+  return `<g transform="translate(${x},${y})">`
+    + `<rect x="-3" y="-1" width="6" height="1" fill="${c.canal}"/>`
+    + `<rect x="-2.5" y="-0.7" width="5" height="0.5" fill="${c.fountainWater}" opacity="0.5"/>`
+    + `</g>`;
+}
+
+function svgWatermill(x: number, y: number, c: AssetColors): string {
+  return `<g transform="translate(${x},${y})">`
+    + `<rect x="-2" y="-4" width="4" height="4" fill="${c.wall}"/>`
+    + `<polygon points="-2.5,-4 0,-6 2.5,-4" fill="${c.roofB}"/>`
+    + `<g>`
+    + `<circle cx="3" cy="-2" r="2" fill="none" stroke="${c.trunk}" stroke-width="0.5"/>`
+    + `<line x1="3" y1="-4" x2="3" y2="0" stroke="${c.trunk}" stroke-width="0.3"/>`
+    + `<line x1="1" y1="-2" x2="5" y2="-2" stroke="${c.trunk}" stroke-width="0.3"/>`
+    + `<animateTransform attributeName="transform" type="rotate" from="0 3 -2" to="360 3 -2" dur="6s" repeatCount="indefinite"/>`
+    + `</g>`
+    + `</g>`;
+}
+
+function svgGardenTree(x: number, y: number, c: AssetColors): string {
+  return `<g transform="translate(${x},${y})">`
+    + `<line x1="0" y1="0" x2="0" y2="-2.5" stroke="${c.trunk}" stroke-width="0.5"/>`
+    + `<circle cx="0" cy="-4" r="2" fill="${c.gardenTree}"/>`
+    + `<circle cx="-0.8" cy="-3.5" r="1.2" fill="${c.leaf}" opacity="0.6"/>`
+    + `</g>`;
+}
+
+function svgPondLily(x: number, y: number, c: AssetColors): string {
+  return `<g transform="translate(${x},${y})">`
+    + `<ellipse cx="0" cy="-0.3" rx="1.5" ry="0.6" fill="${c.pine}" opacity="0.7"/>`
+    + `<circle cx="0.3" cy="-0.5" r="0.4" fill="${c.flower}"/>`
+    + `</g>`;
+}
+
 // ── Render Dispatcher ───────────────────────────────────────
 
 const RENDERERS: Record<AssetType, (x: number, y: number, c: AssetColors) => string> = {
@@ -612,6 +774,7 @@ const RENDERERS: Record<AssetType, (x: number, y: number, c: AssetColors) => str
   cow: svgCow,
   chicken: svgChicken,
   horse: svgHorse,
+  ricePaddy: svgRicePaddy,
   // Village
   tent: svgTent,
   hut: svgHut,
@@ -627,6 +790,13 @@ const RENDERERS: Record<AssetType, (x: number, y: number, c: AssetColors) => str
   castle: svgCastle,
   tower: svgTower,
   bridge: svgBridge,
+  // Biome blend
+  reeds: svgReeds,
+  fountain: svgFountain,
+  canal: svgCanal,
+  watermill: svgWatermill,
+  gardenTree: svgGardenTree,
+  pondLily: svgPondLily,
   // Cross-level
   cart: svgCart,
   barrel: svgBarrel,
@@ -642,8 +812,9 @@ export function renderTerrainAssets(
   isoCells: IsoCell[],
   seed: number,
   palette: TerrainPalette100,
+  biomeMap?: Map<string, BiomeContext>,
 ): string {
-  const placed = selectAssets(isoCells, seed);
+  const placed = selectAssets(isoCells, seed, biomeMap);
   const c = palette.assets;
 
   const svgParts = placed.map(a => {
