@@ -166,34 +166,45 @@ export function enrichGridCells(cells: GridCell[], data: ContributionData): Grid
 
 /**
  * Compute a fine-grained 100-level intensity from raw contribution count.
- * Level 0 = no contributions. Levels 1–99 use a log curve to spread
- * low values across more levels, matching how most developers have many
- * low-count days and few high-count days.
+ * Level 0 = no contributions. Levels 1–99 use a sqrt curve for a balanced
+ * distribution that lets moderate activity reach village/city levels.
+ * The effectiveMax should be the P90 of non-zero counts to prevent
+ * outlier days from compressing the entire range.
  */
 export function computeLevel100(count: number, maxCount: number): Level100 {
   if (count === 0) return 0;
   if (maxCount <= 0) return 1;
   const ratio = clamp(count / maxCount, 0, 1);
-  const curved = Math.log(1 + ratio * 99) / Math.log(100);
+  const curved = Math.sqrt(ratio);
   return clamp(Math.round(curved * 98) + 1, 1, 99);
 }
 
 /**
  * Enrich grid cells with 100-level intensity based on raw contribution counts.
+ * Uses the P90 of non-zero counts as the effective max, so outlier days
+ * don't compress the entire range into low levels.
  */
 export function enrichGridCells100(
   cells: GridCell[],
   data: ContributionData,
 ): GridCell100[] {
-  let maxCount = 0;
+  const nonZeroCounts: number[] = [];
   for (const week of data.weeks) {
     for (const day of week.days) {
-      if (day.count > maxCount) maxCount = day.count;
+      if (day.count > 0) nonZeroCounts.push(day.count);
     }
   }
+
+  // P90 of non-zero counts — outliers above this cap at level 99
+  nonZeroCounts.sort((a, b) => a - b);
+  const p90Index = Math.floor(nonZeroCounts.length * 0.9);
+  const effectiveMax = nonZeroCounts.length > 0
+    ? nonZeroCounts[Math.min(p90Index, nonZeroCounts.length - 1)]
+    : 1;
+
   return cells.map(cell => ({
     ...cell,
-    level100: computeLevel100(cell.count, maxCount),
+    level100: computeLevel100(cell.count, effectiveMax),
   }));
 }
 
