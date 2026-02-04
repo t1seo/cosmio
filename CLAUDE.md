@@ -79,6 +79,7 @@ npx tsx scripts/generate-cases.ts      # Generate case study SVGs (examples/case
 - ESM modules (`"type": "module"` in package.json)
 - No default exports — named exports only
 - Theme self-registration pattern (import triggers `registerTheme()`)
+- No horizontal rules (`---`) in README files
 
 ## Rendering Pipeline
 
