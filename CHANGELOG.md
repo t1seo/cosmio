@@ -14,6 +14,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Preview assets** — replaced GIFs with generated SVGs using rich sample data.
 - **Level distribution** — switched from log curve to sqrt curve with P90 normalization. Moderate activity now reaches village/city levels instead of being compressed by outlier days.
 - **README** — added "How Does the Terrain Work?" section explaining terrain mechanics with examples. Removed CLI and Development sections (not intended for local use).
+- **Customization examples** — added hemisphere, custom title, and specific year examples to README.
+- **Multilingual docs** — added Japanese (日本語) and Chinese (中文) READMEs with language badges across all versions.
+- **GitHub Marketplace** — published as a GitHub Action on the Marketplace.
 
 ## [1.0.1] - 2026-02-05
 
