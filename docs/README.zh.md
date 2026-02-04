@@ -51,6 +51,9 @@ on:
     - cron: '0 0 * * *'  # 每天
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   generate:
     runs-on: ubuntu-latest
