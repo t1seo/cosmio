@@ -15,7 +15,7 @@ import type { BiomeContext } from './biomes.js';
 
 const MAX_WATER = 15;
 const MAX_SPARKLE = 10;
-const NUM_CLOUDS = 4;
+const NUM_CLOUDS = 2;
 
 // ── CSS Animations ───────────────────────────────────────────
 
@@ -145,11 +145,103 @@ export function renderAnimatedOverlays(
   return `<g class="terrain-overlays">${overlays.join('')}</g>`;
 }
 
+// ── Celestial Bodies ─────────────────────────────────────────
+
+/**
+ * Render celestial bodies in the sky area.
+ * Dark mode: scattered stars + crescent moon.
+ * Light mode: sun with rays.
+ */
+export function renderCelestials(seed: number, palette: TerrainPalette100, isDark: boolean): string {
+  const rng = seededRandom(seed + 3331);
+  const parts: string[] = [];
+
+  if (isDark) {
+    // Stars: small dots scattered in the upper sky area
+    const numStars = 18 + Math.floor(rng() * 10);
+    for (let i = 0; i < numStars; i++) {
+      const sx = 30 + rng() * 780;
+      const sy = 5 + rng() * 55;
+      const sr = 0.3 + rng() * 0.6;
+      const opacity = 0.3 + rng() * 0.5;
+      parts.push(
+        `<circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="${sr.toFixed(1)}" fill="#fff" opacity="${opacity.toFixed(2)}"/>`,
+      );
+    }
+
+    // A few brighter stars (cross shape)
+    for (let i = 0; i < 3; i++) {
+      const bx = 60 + rng() * 720;
+      const by = 8 + rng() * 40;
+      const len = 1.2 + rng() * 0.8;
+      parts.push(
+        `<g opacity="${(0.5 + rng() * 0.3).toFixed(2)}">`
+        + `<line x1="${bx - len}" y1="${by}" x2="${bx + len}" y2="${by}" stroke="#fff" stroke-width="0.4"/>`
+        + `<line x1="${bx}" y1="${by - len}" x2="${bx}" y2="${by + len}" stroke="#fff" stroke-width="0.4"/>`
+        + `</g>`,
+      );
+    }
+
+    // Crescent moon
+    const mx = 680 + rng() * 80;
+    const my = 18 + rng() * 15;
+    const mr = 8;
+    parts.push(
+      `<g>`
+      // Full moon circle
+      + `<circle cx="${mx}" cy="${my}" r="${mr}" fill="#e8e4d0" opacity="0.85"/>`
+      // Dark circle overlapping to create crescent
+      + `<circle cx="${mx + 3.5}" cy="${my - 1.5}" r="${mr - 0.5}" fill="${palette.bg.subtle}"/>`
+      // Subtle glow
+      + `<circle cx="${mx}" cy="${my}" r="${mr + 3}" fill="#e8e4d0" opacity="0.04"/>`
+      + `</g>`,
+    );
+  } else {
+    // Sun: circle with radiating lines
+    const sx = 720 + rng() * 60;
+    const sy = 20 + rng() * 12;
+    const sr = 7;
+
+    // Outer glow
+    parts.push(
+      `<circle cx="${sx}" cy="${sy}" r="${sr + 6}" fill="#ffeebb" opacity="0.1"/>`,
+    );
+    parts.push(
+      `<circle cx="${sx}" cy="${sy}" r="${sr + 3}" fill="#ffdd88" opacity="0.15"/>`,
+    );
+    // Sun body
+    parts.push(
+      `<circle cx="${sx}" cy="${sy}" r="${sr}" fill="#ffe066" opacity="0.9"/>`,
+    );
+    // Core highlight
+    parts.push(
+      `<circle cx="${sx - 1.5}" cy="${sy - 1.5}" r="${sr * 0.45}" fill="#fff8cc" opacity="0.6"/>`,
+    );
+    // Rays (8 lines radiating outward)
+    for (let r = 0; r < 8; r++) {
+      const angle = (r / 8) * Math.PI * 2;
+      const innerR = sr + 2;
+      const outerR = sr + 5 + (r % 2) * 2; // alternating long/short
+      const x1 = sx + Math.cos(angle) * innerR;
+      const y1 = sy + Math.sin(angle) * innerR;
+      const x2 = sx + Math.cos(angle) * outerR;
+      const y2 = sy + Math.sin(angle) * outerR;
+      parts.push(
+        `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" `
+        + `stroke="#ffdd66" stroke-width="0.8" opacity="0.5" stroke-linecap="round"/>`,
+      );
+    }
+  }
+
+  return `<g class="celestials">${parts.join('')}</g>`;
+}
+
 // ── Composite Clouds ─────────────────────────────────────────
 
 /**
- * Render drifting composite clouds with multiple overlapping ellipses.
- * Each cloud = 3-5 circles, Y-squashed ×0.5 for isometric perspective.
+ * Render drifting composite clouds with structured cumulus shapes.
+ * Each cloud has a flat base + billowing top built from carefully
+ * placed ellipses. Y-squashed ×0.45 for isometric perspective.
  * Uses SMIL animateTransform for drift animation.
  */
 export function renderClouds(seed: number, palette: TerrainPalette100): string {
@@ -157,30 +249,38 @@ export function renderClouds(seed: number, palette: TerrainPalette100): string {
   const clouds: string[] = [];
 
   for (let i = 0; i < NUM_CLOUDS; i++) {
-    const baseCx = 60 + rng() * 650;
-    const baseCy = 25 + rng() * 85;
-    const baseW = 25 + rng() * 35;
-    const numCircles = 3 + Math.floor(rng() * 3); // 3-5 circles
-    const dur = (30 + rng() * 25).toFixed(0);
-    const driftX = 80 + rng() * 60;
+    const baseCx = 120 + rng() * 550;
+    const baseCy = 20 + rng() * 60;
+    const scale = 0.8 + rng() * 0.5; // size variation
+    const dur = (35 + rng() * 20).toFixed(0);
+    const driftX = 60 + rng() * 50;
 
     const ellipses: string[] = [];
-    for (let j = 0; j < numCircles; j++) {
-      // Offset each circle from center
-      const ox = (rng() - 0.5) * baseW * 0.8;
-      const oy = (rng() - 0.5) * 6;
-      const rx = (baseW * 0.3 + rng() * baseW * 0.3);
-      const ry = rx * 0.45; // Y-squash for isometric
+    const f = palette.cloud.fill;
+    const s = palette.cloud.stroke;
+    const o = palette.cloud.opacity;
 
-      ellipses.push(
-        `<ellipse cx="${(baseCx + ox).toFixed(1)}" cy="${(baseCy + oy).toFixed(1)}"`
-        + ` rx="${rx.toFixed(1)}" ry="${ry.toFixed(1)}"`
-        + ` fill="${palette.cloud.fill}" stroke="${palette.cloud.stroke}" stroke-width="0.5"`
-        + ` opacity="${palette.cloud.opacity}"/>`,
-      );
-    }
+    // Flat base: wide, short ellipse
+    ellipses.push(
+      `<ellipse cx="${baseCx}" cy="${baseCy}" rx="${(28 * scale).toFixed(1)}" ry="${(5 * scale).toFixed(1)}" fill="${f}" stroke="${s}" stroke-width="0.4" opacity="${o}"/>`,
+    );
+    // Left billow
+    ellipses.push(
+      `<ellipse cx="${(baseCx - 14 * scale).toFixed(1)}" cy="${(baseCy - 3 * scale).toFixed(1)}" rx="${(12 * scale).toFixed(1)}" ry="${(6 * scale).toFixed(1)}" fill="${f}" stroke="${s}" stroke-width="0.3" opacity="${o}"/>`,
+    );
+    // Center billow (tallest)
+    ellipses.push(
+      `<ellipse cx="${(baseCx - 2 * scale).toFixed(1)}" cy="${(baseCy - 6 * scale).toFixed(1)}" rx="${(14 * scale).toFixed(1)}" ry="${(8 * scale).toFixed(1)}" fill="${f}" stroke="${s}" stroke-width="0.3" opacity="${o}"/>`,
+    );
+    // Right billow
+    ellipses.push(
+      `<ellipse cx="${(baseCx + 12 * scale).toFixed(1)}" cy="${(baseCy - 3.5 * scale).toFixed(1)}" rx="${(11 * scale).toFixed(1)}" ry="${(5.5 * scale).toFixed(1)}" fill="${f}" stroke="${s}" stroke-width="0.3" opacity="${o}"/>`,
+    );
+    // Top highlight (small bright bump)
+    ellipses.push(
+      `<ellipse cx="${(baseCx - 4 * scale).toFixed(1)}" cy="${(baseCy - 9 * scale).toFixed(1)}" rx="${(7 * scale).toFixed(1)}" ry="${(4 * scale).toFixed(1)}" fill="${f}" stroke="none" opacity="${(o * 0.7).toFixed(2)}"/>`,
+    );
 
-    // Wrap in a group with SMIL translation
     clouds.push(
       `<g>`
       + ellipses.join('')
@@ -244,10 +344,12 @@ export function renderWaterOverlays(
 // ── Waterfalls (Laputa-style) ────────────────────────────────
 
 /**
- * Render waterfalls off edge river cells (week=0/51, day=0/6).
- * Max 2 waterfalls. Each has 3-4 animated blue streaks falling
- * downward plus a mist ellipse at the bottom.
- * Animation budget: ~4 SMIL animates.
+ * Render waterfalls cascading off the side faces of edge river cells.
+ * Water flows outward and downward from the isometric cliff edge,
+ * using curved bezier paths for organic shape, with spray particles
+ * and mist at the bottom.
+ *
+ * Max 2 waterfalls. Animation budget: ~4 SMIL animates.
  */
 export function renderWaterfalls(
   isoCells: IsoCell[],
@@ -265,61 +367,113 @@ export function renderWaterfalls(
 
   // Pick up to 2 waterfalls
   const selected = edgeRiverCells.slice(0, 2);
-  const waterfalls: string[] = [];
-  const waterColor = palette.assets.waterLight;
-  const waterDark = palette.assets.water;
-  let animCount = 0;
+  const parts: string[] = [];
+  const wc = palette.assets.waterLight;  // lighter water
+  const wd = palette.assets.water;       // darker water
+  let animIdx = 0;
 
   for (const cell of selected) {
     const { isoX: cx, isoY: cy, height: h } = cell;
-    // Determine fall direction based on edge
-    const fallX = cell.week === 0 ? -THW : cell.week === 51 ? THW : 0;
-    const baseY = cy + THH + h;
-    const fallLength = 18 + h;
 
-    const streaks: string[] = [];
-    // 3-4 blue streaks falling downward
-    const numStreaks = 3 + (animCount < 3 ? 1 : 0);
-    for (let s = 0; s < numStreaks; s++) {
-      const sx = cx + fallX * 0.3 + (s - 1.5) * 1.2;
-      const sy1 = baseY;
-      const sy2 = baseY + fallLength;
-      const strokeW = 0.6 + (s % 2) * 0.3;
-      const opacity = 0.5 + (s % 2) * 0.15;
+    // Determine which edge this cell is on → outward direction
+    // Left edge (week=0): water flows to the left face
+    // Right edge (week=51): water flows to the right face
+    // Top edge (day=0): water flows up-left
+    // Bottom edge (day=6): water flows down-right
+    const isLeft = cell.week === 0;
+    const isRight = cell.week === 51;
+    const isTop = cell.day === 0;
+    const isBottom = cell.day === 6;
 
-      if (animCount < 4) {
-        // Animated streak: flowing downward effect
-        streaks.push(
-          `<line x1="${sx}" y1="${sy1}" x2="${sx + fallX * 0.1}" y2="${sy2}" `
-          + `stroke="${waterColor}" stroke-width="${strokeW}" opacity="${opacity}" stroke-linecap="round">`
-          + `<animate attributeName="y1" values="${sy1};${sy1 - 3};${sy1}" dur="${2 + s * 0.3}s" repeatCount="indefinite"/>`
-          + `</line>`,
+    // Anchor: bottom of the side face where water starts
+    // For left/top edges: water starts at the left face corner
+    // For right/bottom edges: water starts at the right face corner
+    let startX: number, startY: number;
+    let outDx: number, outDy: number; // outward direction for curves
+
+    if (isLeft || isTop) {
+      startX = cx - THW;
+      startY = cy + h;
+      outDx = -1;
+      outDy = 0.3;
+    } else {
+      startX = cx + THW;
+      startY = cy + h;
+      outDx = 1;
+      outDy = 0.3;
+    }
+
+    const fallLen = 14 + h * 0.8;
+    const elements: string[] = [];
+
+    // Main water body: wide curved path (filled, not stroked)
+    const bodyW = 3;
+    elements.push(
+      `<path d="M${startX - bodyW * 0.5},${startY}`
+      + ` C${startX + outDx * 4 - bodyW * 0.7},${startY + fallLen * 0.3}`
+      + ` ${startX + outDx * 6 - bodyW * 0.3},${startY + fallLen * 0.7}`
+      + ` ${startX + outDx * 5},${startY + fallLen}`
+      + ` L${startX + outDx * 5 + bodyW},${startY + fallLen}`
+      + ` C${startX + outDx * 6 + bodyW * 0.3},${startY + fallLen * 0.7}`
+      + ` ${startX + outDx * 4 + bodyW * 0.7},${startY + fallLen * 0.3}`
+      + ` ${startX + bodyW * 0.5},${startY} Z"`
+      + ` fill="${wd}" opacity="0.45"/>`,
+    );
+
+    // Flowing highlight streaks (thinner bezier curves inside the body)
+    for (let s = 0; s < 3; s++) {
+      const sOff = (s - 1) * 1.0;
+      const sw = 0.5 + s * 0.15;
+      const sOpacity = 0.5 - s * 0.1;
+      const sx = startX + sOff;
+
+      const pathD = `M${sx},${startY}`
+        + ` Q${sx + outDx * 4},${startY + fallLen * 0.4}`
+        + ` ${sx + outDx * 5 + sOff * 0.3},${startY + fallLen}`;
+
+      if (animIdx < 4) {
+        // Animated: dash-offset creates flowing effect
+        elements.push(
+          `<path d="${pathD}" stroke="${wc}" fill="none" stroke-width="${sw}" `
+          + `opacity="${sOpacity}" stroke-linecap="round" stroke-dasharray="3 4">`
+          + `<animate attributeName="stroke-dashoffset" values="0;-7" dur="${1.5 + s * 0.4}s" repeatCount="indefinite"/>`
+          + `</path>`,
         );
-        animCount++;
+        animIdx++;
       } else {
-        // Static streak (animation budget exhausted)
-        streaks.push(
-          `<line x1="${sx}" y1="${sy1}" x2="${sx + fallX * 0.1}" y2="${sy2}" `
-          + `stroke="${waterColor}" stroke-width="${strokeW}" opacity="${opacity}" stroke-linecap="round"/>`,
+        elements.push(
+          `<path d="${pathD}" stroke="${wc}" fill="none" stroke-width="${sw}" `
+          + `opacity="${sOpacity}" stroke-linecap="round"/>`,
         );
       }
     }
 
-    // Mist ellipse at the bottom with pulsing opacity
-    const mistY = baseY + fallLength + 2;
-    const mistSvg = animCount < 4
-      ? `<ellipse cx="${cx + fallX * 0.3}" cy="${mistY}" rx="4" ry="1.5" fill="${waterDark}" opacity="0.3">`
-        + `<animate attributeName="opacity" values="0.2;0.4;0.2" dur="3s" repeatCount="indefinite"/>`
-        + `</ellipse>`
-      : `<ellipse cx="${cx + fallX * 0.3}" cy="${mistY}" rx="4" ry="1.5" fill="${waterDark}" opacity="0.3"/>`;
-
-    waterfalls.push(
-      `<g class="waterfall">${streaks.join('')}${mistSvg}</g>`,
+    // Spray particles at the bottom (3-4 small dots)
+    const sprayBaseX = startX + outDx * 5;
+    const sprayBaseY = startY + fallLen;
+    elements.push(
+      `<circle cx="${sprayBaseX - 2}" cy="${sprayBaseY + 1}" r="0.6" fill="${wc}" opacity="0.3"/>`,
     );
+    elements.push(
+      `<circle cx="${sprayBaseX + 2.5}" cy="${sprayBaseY + 2}" r="0.5" fill="${wc}" opacity="0.25"/>`,
+    );
+    elements.push(
+      `<circle cx="${sprayBaseX}" cy="${sprayBaseY + 3}" r="0.7" fill="${wc}" opacity="0.2"/>`,
+    );
+
+    // Mist cloud at bottom
+    const mistSvg = animIdx < 4
+      ? `<ellipse cx="${sprayBaseX}" cy="${sprayBaseY + 3}" rx="5" ry="2" fill="${wd}" opacity="0.2">`
+        + `<animate attributeName="opacity" values="0.15;0.3;0.15" dur="3s" repeatCount="indefinite"/>`
+        + `</ellipse>`
+      : `<ellipse cx="${sprayBaseX}" cy="${sprayBaseY + 3}" rx="5" ry="2" fill="${wd}" opacity="0.2"/>`;
+    elements.push(mistSvg);
+
+    parts.push(`<g class="waterfall">${elements.join('')}</g>`);
   }
 
-  return waterfalls.length > 0
-    ? `<g class="waterfalls">${waterfalls.join('')}</g>`
+  return parts.length > 0
+    ? `<g class="waterfalls">${parts.join('')}</g>`
     : '';
 }
 

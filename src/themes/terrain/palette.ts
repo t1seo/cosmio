@@ -418,7 +418,7 @@ export function getTerrainPalette100(mode: ColorMode): TerrainPalette100 {
     bg: { subtle: mode === 'dark' ? '#161b22' : '#f6f8fa' },
     cloud: mode === 'dark'
       ? { fill: 'rgba(200,210,220,0.12)', stroke: 'rgba(200,210,220,0.06)', opacity: 0.8 }
-      : { fill: 'rgba(255,255,255,0.55)', stroke: 'rgba(180,190,200,0.25)', opacity: 0.9 },
+      : { fill: 'rgba(190,205,220,0.35)', stroke: 'rgba(160,175,195,0.30)', opacity: 0.85 },
     assets: mode === 'dark' ? DARK_ASSETS : LIGHT_ASSETS,
   };
 }

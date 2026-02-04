@@ -13,7 +13,7 @@ import { registerTheme } from '../registry.js';
 import { contributionGrid, enrichGridCells100, renderTitle, renderStatsBar } from '../shared.js';
 import { getTerrainPalette100 } from './palette.js';
 import { renderTerrainBlocks, getIsoCells } from './blocks.js';
-import { renderTerrainCSS, renderAnimatedOverlays, renderClouds, renderWaterOverlays, renderWaterRipples, renderWaterfalls } from './effects.js';
+import { renderTerrainCSS, renderAnimatedOverlays, renderClouds, renderWaterOverlays, renderWaterRipples, renderWaterfalls, renderCelestials } from './effects.js';
 import { renderTerrainAssets, renderAssetCSS } from './assets.js';
 import { generateBiomeMap } from './biomes.js';
 import { hash } from '../../utils/math.js';
@@ -41,15 +41,16 @@ const terrainTheme: Theme = {
  *
  * Layer order (back to front):
  * 1. Style (CSS animations)
- * 2. Clouds (behind terrain for depth)
- * 3. Terrain blocks (isometric 3D, water cells blue-tinted)
- * 4. Water overlays (river/pond shimmer on blocks)
- * 5. Water ripples (static wavy lines on water surfaces)
- * 6. Assets (trees, buildings, animals, ocean life)
- * 7. Waterfalls (animated streaks off island edges)
- * 8. Animated overlays (water shimmer, town sparkle)
- * 9. Title (top-left)
- * 10. Stats bar (bottom)
+ * 2. Celestials (stars+moon or sun, deepest sky layer)
+ * 3. Clouds (behind terrain for depth)
+ * 4. Terrain blocks (isometric 3D, water cells blue-tinted)
+ * 5. Water overlays (river/pond shimmer on blocks)
+ * 6. Water ripples (static wavy lines on water surfaces)
+ * 7. Assets (trees, buildings, animals, ocean life)
+ * 8. Waterfalls (curved paths off island edges)
+ * 9. Animated overlays (water shimmer, town sparkle)
+ * 10. Title (top-left)
+ * 11. Stats bar (bottom)
  */
 function renderMode(
   data: ContributionData,
@@ -83,6 +84,8 @@ function renderMode(
   const assetCSS = renderAssetCSS();
   const css = terrainCSS + '\n' + assetCSS;
 
+  const isDark = mode === 'dark';
+  const celestials = renderCelestials(seed, palette, isDark);
   const clouds = renderClouds(seed, palette);
   const blocks = renderTerrainBlocks(cells100, palette, originX, originY, biomeMap);
   const waterOverlays = renderWaterOverlays(isoCells, palette, biomeMap);
@@ -111,6 +114,7 @@ function renderMode(
   // Assemble
   const content = [
     svgStyle(css),
+    celestials,
     clouds,
     blocks,
     waterOverlays,
