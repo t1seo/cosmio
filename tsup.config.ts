@@ -24,4 +24,14 @@ export default defineConfig([
     splitting: false,
     sourcemap: true,
   },
+  // GitHub Action entry — single ESM bundle
+  {
+    entry: { action: 'src/action.ts' },
+    format: ['esm'],
+    dts: false,
+    clean: false,
+    shims: true,
+    splitting: false,
+    sourcemap: true,
+  },
 ]);

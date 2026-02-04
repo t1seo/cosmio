@@ -64,7 +64,7 @@ export interface ThemeOutput {
 
 /** Theme renderer interface — each theme must implement this */
 export interface Theme {
-  /** Unique theme identifier (e.g., "nebula", "constellation") */
+  /** Unique theme identifier (e.g., "terrain") */
   name: string;
   /** Human-readable display name */
   displayName: string;
@@ -116,7 +116,7 @@ export interface ThemePalette {
 export interface CliOptions {
   /** GitHub username to visualize */
   user: string;
-  /** Theme name (default: "nebula") */
+  /** Theme name (default: "terrain") */
   theme: string;
   /** Custom title text (default: "@<username>") */
   title: string;

@@ -1,0 +1,32 @@
+name: 'Terraviz - Contribution Terrain Visualizer'
+description: 'Generate animated terrain SVGs from GitHub contributions'
+branding:
+  icon: 'map'
+  color: 'green'
+inputs:
+  github_token:
+    description: 'GitHub token for API access'
+    required: false
+    default: '${{ github.token }}'
+  theme:
+    description: 'Theme name (terrain)'
+    required: false
+    default: 'terrain'
+  title:
+    description: 'Custom title text'
+    required: false
+  output_dir:
+    description: 'Output directory for SVG files'
+    required: false
+    default: './'
+  year:
+    description: 'Target year to visualize'
+    required: false
+outputs:
+  dark_svg_path:
+    description: 'Path to the generated dark mode SVG'
+  light_svg_path:
+    description: 'Path to the generated light mode SVG'
+runs:
+  using: 'node24'
+  main: 'dist/action.js'

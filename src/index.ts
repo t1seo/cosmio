@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Cosmio CLI — Transform GitHub contribution data into space-themed animated SVGs
+ * Terraviz CLI — Transform GitHub contributions into animated terrain SVGs
  */
 
 import { Command } from 'commander';
@@ -14,16 +14,13 @@ import { computeStats } from './core/stats.js';
 import { getTheme, listThemes, getDefaultTheme } from './themes/registry.js';
 
 // Import theme modules to trigger self-registration
-import './themes/nebula/index.js';
-// Future: import './themes/constellation/index.js';
-// Future: import './themes/voyage/index.js';
-// Future: import './themes/defense/index.js';
+import './themes/terrain/index.js';
 
 const program = new Command();
 
 program
-  .name('cosmio')
-  .description('Transform GitHub contribution data into space-themed animated SVGs')
+  .name('terraviz')
+  .description('Transform GitHub contributions into animated terrain SVGs')
   .version('0.1.0')
   .requiredOption('-u, --user <username>', 'GitHub username')
   .option('-t, --theme <name>', 'Theme name', getDefaultTheme())
@@ -69,8 +66,8 @@ program
       });
 
       // Write output files
-      const darkPath = join(options.output, `cosmio-${options.theme}-dark.svg`);
-      const lightPath = join(options.output, `cosmio-${options.theme}-light.svg`);
+      const darkPath = join(options.output, `terraviz-${options.theme}-dark.svg`);
+      const lightPath = join(options.output, `terraviz-${options.theme}-light.svg`);
 
       await writeFile(darkPath, output.dark, 'utf-8');
       await writeFile(lightPath, output.light, 'utf-8');

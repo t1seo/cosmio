@@ -33,5 +33,5 @@ export function listThemes(): string[] {
  * @returns The default theme identifier
  */
 export function getDefaultTheme(): string {
-  return 'nebula';
+  return 'terrain';
 }

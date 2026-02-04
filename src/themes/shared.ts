@@ -1,5 +1,15 @@
 import type { ContributionData, ContributionStats, ThemePalette } from '../core/types.js';
 import { formatNumber } from '../core/svg.js';
+import { clamp } from '../utils/math.js';
+
+/** 10-level intensity (0 = none, 9 = maximum) */
+export type Level10 = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
+
+/** A positioned contribution cell with 10-level intensity */
+export interface GridCell10 extends GridCell {
+  /** Fine-grained intensity level (0–9) */
+  level10: Level10;
+}
 
 /** System font stack confirmed working in SVG renderers */
 const FONT_FAMILY = "'Segoe UI', system-ui, sans-serif";
@@ -100,6 +110,49 @@ export function contributionGrid(
   }
 
   return cells;
+}
+
+/**
+ * Compute a fine-grained 10-level intensity from raw contribution count.
+ * Level 0 = no contributions. Levels 1–9 are distributed using the ratio
+ * of count to maxCount, with more granularity at lower levels where most data lives.
+ * @param count - Raw contribution count for this day
+ * @param maxCount - Maximum count across the entire year (for normalization)
+ * @returns Level from 0–9
+ */
+export function computeLevel10(count: number, maxCount: number): Level10 {
+  if (count === 0) return 0;
+  if (maxCount <= 0) return 1;
+  const ratio = clamp(count / maxCount, 0, 1);
+  if (ratio <= 0.06) return 1;
+  if (ratio <= 0.12) return 2;
+  if (ratio <= 0.20) return 3;
+  if (ratio <= 0.30) return 4;
+  if (ratio <= 0.42) return 5;
+  if (ratio <= 0.55) return 6;
+  if (ratio <= 0.70) return 7;
+  if (ratio <= 0.85) return 8;
+  return 9;
+}
+
+/**
+ * Enrich grid cells with 10-level intensity based on raw contribution counts.
+ * @param cells - Positioned grid cells from contributionGrid()
+ * @param data - Full contribution data (used to compute maxCount)
+ * @returns New array of GridCell10 with level10 assigned
+ */
+export function enrichGridCells(cells: GridCell[], data: ContributionData): GridCell10[] {
+  let maxCount = 0;
+  for (const week of data.weeks) {
+    for (const day of week.days) {
+      if (day.count > maxCount) maxCount = day.count;
+    }
+  }
+
+  return cells.map(cell => ({
+    ...cell,
+    level10: computeLevel10(cell.count, maxCount),
+  }));
 }
 
 /**

@@ -1,10 +1,10 @@
 {
-  "name": "cosmio",
+  "name": "terraviz",
   "version": "0.1.0",
-  "description": "Transform GitHub contribution data into space-themed animated SVGs",
+  "description": "Transform GitHub contributions into animated terrain SVGs",
   "type": "module",
   "bin": {
-    "cosmio": "./dist/index.js"
+    "terraviz": "./dist/index.js"
   },
   "main": "./dist/lib.cjs",
   "module": "./dist/lib.js",
@@ -38,9 +38,9 @@
     "contribution",
     "svg",
     "animation",
-    "space",
-    "nebula",
-    "constellation",
+    "terrain",
+    "isometric",
+    "visualization",
     "profile",
     "readme"
   ],
@@ -48,13 +48,14 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/t1seo/cosmio.git"
+    "url": "https://github.com/t1seo/terraviz.git"
   },
-  "homepage": "https://github.com/t1seo/cosmio",
+  "homepage": "https://github.com/t1seo/terraviz",
   "bugs": {
-    "url": "https://github.com/t1seo/cosmio/issues"
+    "url": "https://github.com/t1seo/terraviz/issues"
   },
   "dependencies": {
+    "@actions/core": "^3.0.0",
     "commander": "^14.0.3",
     "simplex-noise": "^4.0.3"
   },

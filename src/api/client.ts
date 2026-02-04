@@ -72,7 +72,7 @@ async function makeGraphQLRequest(
 ): Promise<GitHubApiResponse> {
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
-    'User-Agent': 'cosmio',
+    'User-Agent': 'terraviz',
   };
 
   if (token) {
