@@ -1,6 +1,6 @@
 {
   "name": "maeul",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Transform GitHub contributions into animated terrain SVGs",
   "type": "module",
   "bin": {
@@ -48,11 +48,11 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/t1seo/maeul.git"
+    "url": "https://github.com/t1seo/github-profile-maeul.git"
   },
-  "homepage": "https://github.com/t1seo/maeul",
+  "homepage": "https://github.com/t1seo/github-profile-maeul",
   "bugs": {
-    "url": "https://github.com/t1seo/maeul/issues"
+    "url": "https://github.com/t1seo/github-profile-maeul/issues"
   },
   "dependencies": {
     "@actions/core": "^3.0.0",

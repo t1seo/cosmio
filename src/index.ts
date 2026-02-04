@@ -21,7 +21,7 @@ const program = new Command();
 program
   .name('maeul')
   .description('Transform GitHub contributions into animated terrain SVGs')
-  .version('0.1.0')
+  .version('1.0.0')
   .requiredOption('-u, --user <username>', 'GitHub username')
   .option('-t, --theme <name>', 'Theme name', getDefaultTheme())
   .option('--title <text>', 'Custom title text')

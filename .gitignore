@@ -23,7 +23,8 @@ coverage/
 .playwright-mcp/
 
 # Internal docs & artifacts
-docs/
+docs/*
+!docs/README.ko.md
 examples/
 poc/
 .claude/
