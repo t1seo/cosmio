@@ -86,7 +86,7 @@ function renderMode(
 
   // Compute isometric layout
   const originX = 405;
-  const originY = 16;
+  const originY = 6;
 
   // Get isometric cells for effects and assets
   const isoCells = getIsoCells(cells100, palette, originX, originY);

@@ -33,7 +33,7 @@ export function renderTitle(title: string, palette: ThemePalette): string {
   return [
     `<text`,
     ` x="24"`,
-    ` y="28"`,
+    ` y="17"`,
     ` font-family="${FONT_FAMILY}"`,
     ` font-size="14"`,
     ` fill="${palette.text.primary}"`,
@@ -61,7 +61,7 @@ export function renderStatsBar(stats: ContributionStats, palette: ThemePalette):
       (text, i) =>
         `<text`
         + ` x="${24 + i * 200}"`
-        + ` y="224"`
+        + ` y="233"`
         + ` font-family="${FONT_FAMILY}"`
         + ` font-size="11"`
         + ` fill="${palette.text.secondary}"`
