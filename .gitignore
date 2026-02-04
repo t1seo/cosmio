@@ -25,6 +25,8 @@ coverage/
 # Internal docs & artifacts
 docs/*
 !docs/README.ko.md
+!docs/README.ja.md
+!docs/README.zh.md
 examples/
 poc/
 .claude/
