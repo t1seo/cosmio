@@ -258,7 +258,7 @@ describe('applyTint', () => {
 
   it('winter tint shifts toward white/blue', () => {
     const winterTint = getSeasonalTint(3, 0);
-    const [r, g, b] = applyTint(60, 140, 50, winterTint);
+    const [r] = applyTint(60, 140, 50, winterTint);
     expect(r).toBeGreaterThan(60);
   });
 
@@ -317,7 +317,7 @@ describe('getSeasonalPoolOverrides', () => {
   });
 
   it('summer (rotation=0, week 30) removes winter/autumn assets', () => {
-    const { add, remove } = getSeasonalPoolOverrides(30, 0, 50);
+    const { remove } = getSeasonalPoolOverrides(30, 0, 50);
     expect(remove.has('snowman')).toBe(true);
     expect(remove.has('autumnMaple')).toBe(true);
   });

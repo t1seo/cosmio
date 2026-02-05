@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeLevel100, enrichGridCells100 } from '../../src/themes/shared.js';
+import { computeLevel100 } from '../../src/themes/shared.js';
 
 describe('computeLevel100', () => {
   it('returns 0 for zero contributions', () => {
