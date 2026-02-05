@@ -38,14 +38,11 @@ Maeul in the Sky (천공의 마을) turns your GitHub contribution history into 
 - **Hemisphere support** — Northern or Southern hemisphere seasonal mapping
 - **GitHub Action** — Drop into any workflow for automated daily updates
 
-<details>
-<summary><strong>More previews</strong></summary>
+### More Previews
 
 | Sparse (Archipelago) | Maximum Density (Civilization) |
 |:---:|:---:|
 | ![](.github/assets/preview-sparse.svg) | ![](.github/assets/preview-max.svg) |
-
-</details>
 
 ## Quick Start
 

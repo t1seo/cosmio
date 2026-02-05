@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-02-05
+
+### Added
+
+- **Detailed livestock assets** — sheep, cow, horse, chicken, donkey, and goat with recognizable body shapes and features
+- **Enhanced basic assets** — improved rock, bush, fence, barrel, well, pine, and deciduous tree SVGs with better detail
+- **New palette colors** — added shadow, bushDark, leafLight, and flowerAlt for richer terrain rendering
+
+### Changed
+
+- **Natural autumn colors** — adjusted autumn tint from heavy red to balanced yellow-gold mix (colorShift 0.12, warmth 15)
+- **Smoother season transitions** — extended transition zones for gradual seasonal gradients
+- **Relaxed asset generation** — increased spawn chances by ~30% and raised animation budgets for livelier terrain
+- **README previews** — "More Previews" section now always visible instead of collapsible
+
+### Fixed
+
+- **Christmas tree SVG bug** — removed duplicate `points` attribute that caused SVG parsing errors in some browsers
+
 ## [1.1.0] - 2026-02-05
 
 ### Changed
@@ -48,6 +67,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Water system** — two-tone water overlays, ripple lines, river shimmer animations
 - **Contribution statistics** — streak calculation, day-of-week analysis
 
+[1.2.0]: https://github.com/t1seo/maeul-in-the-sky/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/t1seo/maeul-in-the-sky/compare/v1.0.1...v1.1.0
 [1.0.1]: https://github.com/t1seo/maeul-in-the-sky/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/t1seo/maeul-in-the-sky/releases/tag/v1.0.0
