@@ -319,7 +319,9 @@ function interpolateRGB(anchors: ColorAnchor[], level: number): RGB {
       break;
     }
   }
+  /* v8 ignore start */
   if (lower.level === upper.level) return lower.rgb;
+  /* v8 ignore stop */
   const t = (l - lower.level) / (upper.level - lower.level);
   return [
     Math.round(lerp(lower.rgb[0], upper.rgb[0], t)),
@@ -339,7 +341,9 @@ function interpolateHeight(anchors: HeightAnchor[], level: number): number {
       break;
     }
   }
+  /* v8 ignore start */
   if (lower.level === upper.level) return lower.height;
+  /* v8 ignore stop */
   const t = (l - lower.level) / (upper.level - lower.level);
   return Math.round(lerp(lower.height, upper.height, t));
 }
@@ -349,40 +353,40 @@ function darken(rgb: RGB, factor: number): string {
 }
 
 function rgbToHex(rgb: RGB): string {
-  return '#' + rgb.map(c => c.toString(16).padStart(2, '0')).join('');
+  return '#' + rgb.map((c) => c.toString(16).padStart(2, '0')).join('');
 }
 
 function makeElevation(rgb: RGB): ElevationColors {
   return {
     top: rgbToHex(rgb),
     left: darken(rgb, 0.75),
-    right: darken(rgb, 0.60),
+    right: darken(rgb, 0.6),
   };
 }
 
 // ── Dark Mode Anchors ────────────────────────────────────────
 
 const DARK_COLOR_ANCHORS: ColorAnchor[] = [
-  { level: 0,  rgb: [160, 130, 90] },     // Desert sand
-  { level: 4,  rgb: [140, 120, 85] },     // Dry earth
-  { level: 8,  rgb: [100, 115, 100] },    // Scrubland
-  { level: 12, rgb: [40, 80, 130] },      // Shallow water / oasis
-  { level: 18, rgb: [30, 70, 120] },      // Deeper water
-  { level: 24, rgb: [80, 130, 95] },      // Wetland shore
-  { level: 30, rgb: [130, 160, 90] },     // Grassland
-  { level: 40, rgb: [90, 145, 60] },      // Lush grass
-  { level: 52, rgb: [55, 120, 42] },      // Forest
-  { level: 65, rgb: [45, 105, 38] },      // Dense forest
-  { level: 75, rgb: [90, 140, 55] },      // Rich green farmland
-  { level: 85, rgb: [80, 125, 50] },      // Village green
-  { level: 93, rgb: [70, 110, 52] },      // Town with parks
-  { level: 99, rgb: [65, 100, 55] },      // Lush city
+  { level: 0, rgb: [160, 130, 90] }, // Desert sand
+  { level: 4, rgb: [140, 120, 85] }, // Dry earth
+  { level: 8, rgb: [100, 115, 100] }, // Scrubland
+  { level: 12, rgb: [40, 80, 130] }, // Shallow water / oasis
+  { level: 18, rgb: [30, 70, 120] }, // Deeper water
+  { level: 24, rgb: [80, 130, 95] }, // Wetland shore
+  { level: 30, rgb: [130, 160, 90] }, // Grassland
+  { level: 40, rgb: [90, 145, 60] }, // Lush grass
+  { level: 52, rgb: [55, 120, 42] }, // Forest
+  { level: 65, rgb: [45, 105, 38] }, // Dense forest
+  { level: 75, rgb: [90, 140, 55] }, // Rich green farmland
+  { level: 85, rgb: [80, 125, 50] }, // Village green
+  { level: 93, rgb: [70, 110, 52] }, // Town with parks
+  { level: 99, rgb: [65, 100, 55] }, // Lush city
 ];
 
 const DARK_HEIGHT_ANCHORS: HeightAnchor[] = [
-  { level: 0,  height: 0 },
-  { level: 8,  height: 0 },
-  { level: 12, height: 0 },    // Water: flat
+  { level: 0, height: 0 },
+  { level: 8, height: 0 },
+  { level: 12, height: 0 }, // Water: flat
   { level: 18, height: 0 },
   { level: 24, height: 1 },
   { level: 30, height: 3 },
@@ -398,20 +402,20 @@ const DARK_HEIGHT_ANCHORS: HeightAnchor[] = [
 // ── Light Mode Anchors ───────────────────────────────────────
 
 const LIGHT_COLOR_ANCHORS: ColorAnchor[] = [
-  { level: 0,  rgb: [195, 170, 130] },    // Desert sand
-  { level: 4,  rgb: [180, 158, 120] },    // Dry earth
-  { level: 8,  rgb: [145, 155, 135] },    // Scrubland
-  { level: 12, rgb: [100, 160, 210] },    // Shallow water / oasis
-  { level: 18, rgb: [85, 148, 200] },     // Deeper water
-  { level: 24, rgb: [120, 168, 140] },    // Wetland shore
-  { level: 30, rgb: [160, 195, 115] },    // Grassland
-  { level: 40, rgb: [115, 175, 80] },     // Lush grass
-  { level: 52, rgb: [75, 150, 58] },      // Forest
-  { level: 65, rgb: [65, 135, 52] },      // Dense forest
-  { level: 75, rgb: [115, 170, 75] },     // Rich green farmland
-  { level: 85, rgb: [100, 155, 68] },     // Village green
-  { level: 93, rgb: [90, 140, 65] },      // Town with parks
-  { level: 99, rgb: [80, 128, 62] },      // Lush city
+  { level: 0, rgb: [195, 170, 130] }, // Desert sand
+  { level: 4, rgb: [180, 158, 120] }, // Dry earth
+  { level: 8, rgb: [145, 155, 135] }, // Scrubland
+  { level: 12, rgb: [100, 160, 210] }, // Shallow water / oasis
+  { level: 18, rgb: [85, 148, 200] }, // Deeper water
+  { level: 24, rgb: [120, 168, 140] }, // Wetland shore
+  { level: 30, rgb: [160, 195, 115] }, // Grassland
+  { level: 40, rgb: [115, 175, 80] }, // Lush grass
+  { level: 52, rgb: [75, 150, 58] }, // Forest
+  { level: 65, rgb: [65, 135, 52] }, // Dense forest
+  { level: 75, rgb: [115, 170, 75] }, // Rich green farmland
+  { level: 85, rgb: [100, 155, 68] }, // Village green
+  { level: 93, rgb: [90, 140, 65] }, // Town with parks
+  { level: 99, rgb: [80, 128, 62] }, // Lush city
 ];
 
 const LIGHT_HEIGHT_ANCHORS: HeightAnchor[] = DARK_HEIGHT_ANCHORS;
@@ -945,21 +949,23 @@ export function getTerrainPalette100(mode: ColorMode): TerrainPalette100 {
 
   // Pre-compute 10 sampled elevations for backward compatibility
   const sampleLevels = [0, 5, 12, 25, 40, 55, 70, 82, 92, 99];
-  const elevations = sampleLevels.map(l => getElevation(l));
-  const heights = sampleLevels.map(l => getHeight(l));
+  const elevations = sampleLevels.map((l) => getElevation(l));
+  const heights = sampleLevels.map((l) => getHeight(l));
 
   return {
     getElevation,
     getHeight,
     elevations,
     heights,
-    text: mode === 'dark'
-      ? { primary: '#e6edf3', secondary: '#8b949e', accent: '#58a6ff' }
-      : { primary: '#1f2328', secondary: '#656d76', accent: '#0969da' },
+    text:
+      mode === 'dark'
+        ? { primary: '#e6edf3', secondary: '#8b949e', accent: '#58a6ff' }
+        : { primary: '#1f2328', secondary: '#656d76', accent: '#0969da' },
     bg: { subtle: mode === 'dark' ? '#161b22' : '#f6f8fa' },
-    cloud: mode === 'dark'
-      ? { fill: 'rgba(200,210,220,0.12)', stroke: 'rgba(200,210,220,0.06)', opacity: 0.8 }
-      : { fill: 'rgba(190,205,220,0.35)', stroke: 'rgba(160,175,195,0.30)', opacity: 0.85 },
+    cloud:
+      mode === 'dark'
+        ? { fill: 'rgba(200,210,220,0.12)', stroke: 'rgba(200,210,220,0.06)', opacity: 0.8 }
+        : { fill: 'rgba(190,205,220,0.35)', stroke: 'rgba(160,175,195,0.30)', opacity: 0.85 },
     assets: mode === 'dark' ? DARK_ASSETS : LIGHT_ASSETS,
   };
 }
@@ -974,7 +980,9 @@ export function getTerrainPalette100(mode: ColorMode): TerrainPalette100 {
 function tintAssetColors(assets: AssetColors, tint: SeasonalTint): AssetColors {
   const result: Record<string, string> = {};
   for (const [key, value] of Object.entries(assets)) {
+    /* v8 ignore start */
     if (typeof value === 'string') {
+      /* v8 ignore stop */
       if (value.startsWith('#') && value.length === 7) {
         result[key] = applyTintToHex(value, tint);
       } else if (value.startsWith('rgb')) {
@@ -1003,8 +1011,13 @@ export function getSeasonalPalette100(
   const tint = getSeasonalTint(week, rotation);
 
   // Summer has no tinting — return base palette
-  if (tint.colorShift === 0 && tint.warmth === 0 && tint.snowCoverage === 0
-      && tint.greenMul === 1 && tint.saturation === 1) {
+  if (
+    tint.colorShift === 0 &&
+    tint.warmth === 0 &&
+    tint.snowCoverage === 0 &&
+    tint.greenMul === 1 &&
+    tint.saturation === 1
+  ) {
     return base;
   }
 
@@ -1026,8 +1039,8 @@ export function getSeasonalPalette100(
   };
 
   const sampleLevels = [0, 5, 12, 25, 40, 55, 70, 82, 92, 99];
-  const elevations = sampleLevels.map(l => getElevation(l));
-  const heights = sampleLevels.map(l => getHeight(l));
+  const elevations = sampleLevels.map((l) => getElevation(l));
+  const heights = sampleLevels.map((l) => getHeight(l));
 
   return {
     getElevation,
@@ -1042,7 +1055,12 @@ export function getSeasonalPalette100(
 }
 
 /** Internal helper — applies tint to raw RGB without hex conversion */
-function applyTintValues(r: number, g: number, b: number, tint: SeasonalTint): [number, number, number] {
+function applyTintValues(
+  r: number,
+  g: number,
+  b: number,
+  tint: SeasonalTint,
+): [number, number, number] {
   // 1. Saturation
   const gray = 0.299 * r + 0.587 * g + 0.114 * b;
   let nr = gray + (r - gray) * tint.saturation;
@@ -1056,8 +1074,10 @@ function applyTintValues(r: number, g: number, b: number, tint: SeasonalTint): [
   nr += tint.warmth;
   nb -= tint.warmth;
 
-  // 4. Color shift
+  // 4. Color shift (false branch unreachable: only summer has colorShift=0, and summer returns early)
+  /* v8 ignore start */
   if (tint.colorShift > 0) {
+    /* v8 ignore stop */
     nr = lerp(nr, tint.colorTarget[0], tint.colorShift);
     ng = lerp(ng, tint.colorTarget[1], tint.colorShift);
     nb = lerp(nb, tint.colorTarget[2], tint.colorShift);

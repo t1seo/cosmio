@@ -55,8 +55,15 @@ export function smilAnimateTransform(animation: SmilTransformAnimation): string 
  * @returns CSS string containing @keyframes block and class rule
  */
 export function cssKeyframes(animation: CssAnimation): string {
-  const { name, keyframes, duration, easing, iterationCount, fillMode = 'forwards', delay } =
-    animation;
+  const {
+    name,
+    keyframes,
+    duration,
+    easing,
+    iterationCount,
+    fillMode = 'forwards',
+    delay,
+  } = animation;
 
   const keyframeEntries = Object.entries(keyframes)
     .map(([stop, properties]) => {

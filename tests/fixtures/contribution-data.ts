@@ -1,8 +1,4 @@
-import type {
-  ContributionData,
-  ContributionWeek,
-  ContributionDay,
-} from '../../src/core/types.js';
+import type { ContributionData, ContributionWeek, ContributionDay } from '../../src/core/types.js';
 
 // ── Seeded PRNG (Mulberry32) ────────────────────────────────────
 // Deterministic pseudo-random number generator so every call
@@ -232,9 +228,7 @@ export function createStreakTestData(streakDays: number): ContributionData {
 
   const weeks = buildWeeks(2025, (dayIndex) => {
     const isInStreak = dayIndex >= totalDays - streakDays;
-    return isInStreak
-      ? { count: 5, level: 2 as const }
-      : { count: 0, level: 0 as const };
+    return isInStreak ? { count: 5, level: 2 as const } : { count: 0, level: 0 as const };
   });
 
   return {

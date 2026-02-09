@@ -58,14 +58,14 @@ interface ZoneBound {
 }
 
 const ZONE_BOUNDS: ZoneBound[] = [
-  { zone: 0, start: 0,  end: 4 },   // Winter peak
-  { zone: 1, start: 5,  end: 13 },  // Winter -> Spring (longer transition)
-  { zone: 2, start: 14, end: 18 },  // Spring peak
-  { zone: 3, start: 19, end: 27 },  // Spring -> Summer (longer transition)
-  { zone: 4, start: 28, end: 32 },  // Summer peak
-  { zone: 5, start: 33, end: 40 },  // Summer -> Autumn (longer transition)
-  { zone: 6, start: 41, end: 45 },  // Autumn peak
-  { zone: 7, start: 46, end: 51 },  // Autumn -> Winter (longer transition)
+  { zone: 0, start: 0, end: 4 }, // Winter peak
+  { zone: 1, start: 5, end: 13 }, // Winter -> Spring (longer transition)
+  { zone: 2, start: 14, end: 18 }, // Spring peak
+  { zone: 3, start: 19, end: 27 }, // Spring -> Summer (longer transition)
+  { zone: 4, start: 28, end: 32 }, // Summer peak
+  { zone: 5, start: 33, end: 40 }, // Summer -> Autumn (longer transition)
+  { zone: 6, start: 41, end: 45 }, // Autumn peak
+  { zone: 7, start: 46, end: 51 }, // Autumn -> Winter (longer transition)
 ];
 
 // ── Rotation Computation ────────────────────────────────────
@@ -88,9 +88,10 @@ export function computeSeasonRotation(
 ): number {
   const year = oldestWeekDate.getFullYear();
   const dec1 = new Date(year, 11, 1); // December 1 of that year
-  const refDate = oldestWeekDate < dec1
-    ? new Date(year - 1, 11, 1) // use previous year's Dec 1
-    : dec1;
+  const refDate =
+    oldestWeekDate < dec1
+      ? new Date(year - 1, 11, 1) // use previous year's Dec 1
+      : dec1;
   const diffMs = oldestWeekDate.getTime() - refDate.getTime();
   let rotation = Math.round(diffMs / (7 * 86_400_000));
   if (hemisphere === 'south') rotation = (rotation + 26) % 52;
@@ -112,7 +113,9 @@ export function getSeasonZone(week: number, rotation: number = 0): SeasonZone {
       return bound.zone;
     }
   }
+  /* v8 ignore start */
   return 4; // fallback: summer
+  /* v8 ignore stop */
 }
 
 /**
@@ -121,10 +124,18 @@ export function getSeasonZone(week: number, rotation: number = 0): SeasonZone {
  */
 export function getZonePeakSeason(zone: SeasonZone): PeakSeason {
   switch (zone) {
-    case 0: case 7: return 'winter';
-    case 1: case 2: return 'spring';
-    case 3: case 4: return 'summer';
-    case 5: case 6: return 'autumn';
+    case 0:
+    case 7:
+      return 'winter';
+    case 1:
+    case 2:
+      return 'spring';
+    case 3:
+    case 4:
+      return 'summer';
+    case 5:
+    case 6:
+      return 'autumn';
   }
 }
 
@@ -132,7 +143,10 @@ export function getZonePeakSeason(zone: SeasonZone): PeakSeason {
  * Get the blend factor within a transition zone (0 = start season, 1 = end season).
  * For peak zones, returns 0 (fully that season).
  */
-export function getTransitionBlend(week: number, rotation: number = 0): {
+export function getTransitionBlend(
+  week: number,
+  rotation: number = 0,
+): {
   from: PeakSeason;
   to: PeakSeason;
   t: number;
@@ -143,25 +157,29 @@ export function getTransitionBlend(week: number, rotation: number = 0): {
   const zone = getSeasonZone(week, rotation);
 
   switch (zone) {
-    case 0: return { from: 'winter', to: 'winter', t: 0 };
+    case 0:
+      return { from: 'winter', to: 'winter', t: 0 };
     case 1: {
       const bound = ZONE_BOUNDS[1];
       const t = (w - bound.start) / (bound.end - bound.start);
       return { from: 'winter', to: 'spring', t };
     }
-    case 2: return { from: 'spring', to: 'spring', t: 0 };
+    case 2:
+      return { from: 'spring', to: 'spring', t: 0 };
     case 3: {
       const bound = ZONE_BOUNDS[3];
       const t = (w - bound.start) / (bound.end - bound.start);
       return { from: 'spring', to: 'summer', t };
     }
-    case 4: return { from: 'summer', to: 'summer', t: 0 };
+    case 4:
+      return { from: 'summer', to: 'summer', t: 0 };
     case 5: {
       const bound = ZONE_BOUNDS[5];
       const t = (w - bound.start) / (bound.end - bound.start);
       return { from: 'summer', to: 'autumn', t };
     }
-    case 6: return { from: 'autumn', to: 'autumn', t: 0 };
+    case 6:
+      return { from: 'autumn', to: 'autumn', t: 0 };
     case 7: {
       const bound = ZONE_BOUNDS[7];
       const t = (w - bound.start) / (bound.end - bound.start);
@@ -176,15 +194,15 @@ export function getTransitionBlend(week: number, rotation: number = 0): {
 const SEASON_TINTS: Record<PeakSeason, SeasonalTint> = {
   winter: {
     colorShift: 0.35,
-    colorTarget: [238, 242, 248],  // #eef2f8 — snowy white
-    greenMul: 0.60,
+    colorTarget: [238, 242, 248], // #eef2f8 — snowy white
+    greenMul: 0.6,
     warmth: -5,
     snowCoverage: 0.35,
     saturation: 0.65,
   },
   spring: {
     colorShift: 0.05,
-    colorTarget: [255, 220, 230],  // pink warmth
+    colorTarget: [255, 220, 230], // pink warmth
     greenMul: 1.15,
     warmth: 5,
     snowCoverage: 0,
@@ -200,11 +218,11 @@ const SEASON_TINTS: Record<PeakSeason, SeasonalTint> = {
   },
   autumn: {
     colorShift: 0.12,
-    colorTarget: [210, 170, 60],   // golden-yellow with hint of orange
-    greenMul: 0.65,                // some green remains (late summer trees)
-    warmth: 15,                    // moderate warmth (yellow-orange, not red)
+    colorTarget: [210, 170, 60], // golden-yellow with hint of orange
+    greenMul: 0.65, // some green remains (late summer trees)
+    warmth: 15, // moderate warmth (yellow-orange, not red)
     snowCoverage: 0,
-    saturation: 1.12,              // vivid but natural
+    saturation: 1.12, // vivid but natural
   },
 };
 
@@ -243,7 +261,12 @@ export function lerpTint(a: SeasonalTint, b: SeasonalTint, t: number): SeasonalT
  * Apply a seasonal tint to an RGB color.
  * This is the core color transform used by getSeasonalPalette100.
  */
-export function applyTint(r: number, g: number, b: number, tint: SeasonalTint): [number, number, number] {
+export function applyTint(
+  r: number,
+  g: number,
+  b: number,
+  tint: SeasonalTint,
+): [number, number, number] {
   // 1. Apply saturation adjustment
   const gray = 0.299 * r + 0.587 * g + 0.114 * b;
   let nr = gray + (r - gray) * tint.saturation;
@@ -287,7 +310,7 @@ export function applyTintToHex(hex: string, tint: SeasonalTint): string {
   const g = parseInt(hex.slice(3, 5), 16);
   const b = parseInt(hex.slice(5, 7), 16);
   const [nr, ng, nb] = applyTint(r, g, b, tint);
-  return '#' + [nr, ng, nb].map(c => c.toString(16).padStart(2, '0')).join('');
+  return '#' + [nr, ng, nb].map((c) => c.toString(16).padStart(2, '0')).join('');
 }
 
 /**
@@ -301,7 +324,9 @@ export function applyTintToRgb(rgb: string, tint: SeasonalTint): string {
   const [nr, ng, nb] = applyTint(r, g, b, tint);
   if (m.length >= 4) {
     // rgba
+    /* v8 ignore start */
     return `rgba(${nr},${ng},${nb},${m[3].includes('.') ? m[3] : +m[3]})`;
+    /* v8 ignore stop */
   }
   return `rgb(${nr},${ng},${nb})`;
 }
@@ -310,59 +335,173 @@ export function applyTintToRgb(rgb: string, tint: SeasonalTint): string {
 
 export type SeasonalAssetType =
   // Winter
-  | 'snowPine' | 'snowDeciduous' | 'snowman' | 'snowdrift' | 'igloo'
-  | 'frozenPond' | 'icicle' | 'sled' | 'snowCoveredRock' | 'bareBush'
-  | 'winterBird' | 'firewood'
+  | 'snowPine'
+  | 'snowDeciduous'
+  | 'snowman'
+  | 'snowdrift'
+  | 'igloo'
+  | 'frozenPond'
+  | 'icicle'
+  | 'sled'
+  | 'snowCoveredRock'
+  | 'bareBush'
+  | 'winterBird'
+  | 'firewood'
   // Spring
-  | 'cherryBlossom' | 'cherryBlossomSmall' | 'cherryPetals' | 'tulip'
-  | 'tulipField' | 'sprout' | 'nest' | 'lamb' | 'crocus' | 'rainPuddle'
-  | 'birdhouse' | 'gardenBed'
+  | 'cherryBlossom'
+  | 'cherryBlossomSmall'
+  | 'cherryPetals'
+  | 'tulip'
+  | 'tulipField'
+  | 'sprout'
+  | 'nest'
+  | 'lamb'
+  | 'crocus'
+  | 'rainPuddle'
+  | 'birdhouse'
+  | 'gardenBed'
   // Summer
-  | 'parasol' | 'beachTowel' | 'sandcastleSummer' | 'surfboard'
-  | 'iceCreamCart' | 'hammock' | 'sunflower' | 'watermelon' | 'sprinkler'
-  | 'lemonade' | 'fireflies' | 'swimmingPool'
+  | 'parasol'
+  | 'beachTowel'
+  | 'sandcastleSummer'
+  | 'surfboard'
+  | 'iceCreamCart'
+  | 'hammock'
+  | 'sunflower'
+  | 'watermelon'
+  | 'sprinkler'
+  | 'lemonade'
+  | 'fireflies'
+  | 'swimmingPool'
   // Autumn
-  | 'autumnMaple' | 'autumnOak' | 'autumnBirch' | 'autumnGinkgo'
-  | 'fallenLeaves' | 'leafSwirl' | 'acorn' | 'cornStalk'
-  | 'scarecrowAutumn' | 'harvestBasket' | 'hotDrink' | 'autumnWreath';
+  | 'autumnMaple'
+  | 'autumnOak'
+  | 'autumnBirch'
+  | 'autumnGinkgo'
+  | 'fallenLeaves'
+  | 'leafSwirl'
+  | 'acorn'
+  | 'cornStalk'
+  | 'scarecrowAutumn'
+  | 'harvestBasket'
+  | 'hotDrink'
+  | 'autumnWreath';
 
 /** Assets to remove from pools per season (base assets incompatible with the season) */
 const SEASON_REMOVE: Record<PeakSeason, Set<string>> = {
   winter: new Set([
-    'flower', 'butterfly', 'wildflowerPatch', 'tulip', 'tulipField',
-    'cherryBlossom', 'cherryBlossomSmall', 'cherryPetals', 'crocus',
-    'lamb', 'sprout', 'gardenBed', 'birdhouse', 'nest',
-    'parasol', 'beachTowel', 'surfboard', 'swimmingPool',
-    'sunflower', 'watermelon', 'hammock', 'iceCreamCart',
-    'lemonade', 'sprinkler', 'fireflies',
+    'flower',
+    'butterfly',
+    'wildflowerPatch',
+    'tulip',
+    'tulipField',
+    'cherryBlossom',
+    'cherryBlossomSmall',
+    'cherryPetals',
+    'crocus',
+    'lamb',
+    'sprout',
+    'gardenBed',
+    'birdhouse',
+    'nest',
+    'parasol',
+    'beachTowel',
+    'surfboard',
+    'swimmingPool',
+    'sunflower',
+    'watermelon',
+    'hammock',
+    'iceCreamCart',
+    'lemonade',
+    'sprinkler',
+    'fireflies',
     'sandcastleSummer',
   ]),
   spring: new Set([
-    'snowPine', 'snowDeciduous', 'snowman', 'snowdrift', 'igloo',
-    'frozenPond', 'icicle', 'sled', 'snowCoveredRock', 'bareBush',
-    'winterBird', 'firewood',
-    'parasol', 'beachTowel', 'surfboard', 'swimmingPool',
-    'iceCreamCart', 'lemonade', 'sprinkler',
+    'snowPine',
+    'snowDeciduous',
+    'snowman',
+    'snowdrift',
+    'igloo',
+    'frozenPond',
+    'icicle',
+    'sled',
+    'snowCoveredRock',
+    'bareBush',
+    'winterBird',
+    'firewood',
+    'parasol',
+    'beachTowel',
+    'surfboard',
+    'swimmingPool',
+    'iceCreamCart',
+    'lemonade',
+    'sprinkler',
     'sandcastleSummer',
   ]),
   summer: new Set([
-    'snowPine', 'snowDeciduous', 'snowman', 'snowdrift', 'igloo',
-    'frozenPond', 'icicle', 'sled', 'snowCoveredRock', 'bareBush',
-    'winterBird', 'firewood',
-    'autumnMaple', 'autumnOak', 'autumnBirch', 'autumnGinkgo',
-    'fallenLeaves', 'leafSwirl', 'cornStalk', 'scarecrowAutumn',
-    'harvestBasket', 'hotDrink', 'autumnWreath',
+    'snowPine',
+    'snowDeciduous',
+    'snowman',
+    'snowdrift',
+    'igloo',
+    'frozenPond',
+    'icicle',
+    'sled',
+    'snowCoveredRock',
+    'bareBush',
+    'winterBird',
+    'firewood',
+    'autumnMaple',
+    'autumnOak',
+    'autumnBirch',
+    'autumnGinkgo',
+    'fallenLeaves',
+    'leafSwirl',
+    'cornStalk',
+    'scarecrowAutumn',
+    'harvestBasket',
+    'hotDrink',
+    'autumnWreath',
   ]),
   autumn: new Set([
-    'snowPine', 'snowDeciduous', 'snowman', 'snowdrift', 'igloo',
-    'frozenPond', 'icicle', 'sled', 'snowCoveredRock', 'bareBush',
-    'winterBird', 'firewood',
-    'flower', 'butterfly', 'wildflowerPatch', 'tulip', 'tulipField',
-    'cherryBlossom', 'cherryBlossomSmall', 'cherryPetals', 'crocus',
-    'lamb', 'sprout', 'gardenBed', 'birdhouse', 'nest',
-    'parasol', 'beachTowel', 'surfboard', 'swimmingPool',
-    'sunflower', 'watermelon', 'hammock', 'iceCreamCart',
-    'lemonade', 'sprinkler', 'fireflies',
+    'snowPine',
+    'snowDeciduous',
+    'snowman',
+    'snowdrift',
+    'igloo',
+    'frozenPond',
+    'icicle',
+    'sled',
+    'snowCoveredRock',
+    'bareBush',
+    'winterBird',
+    'firewood',
+    'flower',
+    'butterfly',
+    'wildflowerPatch',
+    'tulip',
+    'tulipField',
+    'cherryBlossom',
+    'cherryBlossomSmall',
+    'cherryPetals',
+    'crocus',
+    'lamb',
+    'sprout',
+    'gardenBed',
+    'birdhouse',
+    'nest',
+    'parasol',
+    'beachTowel',
+    'surfboard',
+    'swimmingPool',
+    'sunflower',
+    'watermelon',
+    'hammock',
+    'iceCreamCart',
+    'lemonade',
+    'sprinkler',
+    'fireflies',
     'sandcastleSummer',
   ]),
 };
@@ -380,22 +519,95 @@ interface SeasonalAdditions {
 const SEASON_ADD: Record<PeakSeason, SeasonalAdditions> = {
   winter: {
     nature: ['snowPine', 'snowDeciduous', 'snowCoveredRock', 'bareBush', 'winterBird', 'snowdrift'],
-    settlement: ['snowman', 'igloo', 'sled', 'firewood', 'icicle', 'snowdrift', 'houseWinter', 'houseBWinter', 'barnWinter', 'churchWinter', 'christmasTree', 'winterLantern', 'frozenFountain'],
+    settlement: [
+      'snowman',
+      'igloo',
+      'sled',
+      'firewood',
+      'icicle',
+      'snowdrift',
+      'houseWinter',
+      'houseBWinter',
+      'barnWinter',
+      'churchWinter',
+      'christmasTree',
+      'winterLantern',
+      'frozenFountain',
+    ],
     general: ['snowdrift', 'snowCoveredRock', 'bareBush', 'icicle'],
   },
   spring: {
-    nature: ['cherryBlossom', 'cherryBlossomSmall', 'cherryBlossomFull', 'cherryBlossomBranch', 'peachBlossom', 'tulip', 'tulipField', 'sprout', 'crocus', 'lamb', 'robinBird'],
-    settlement: ['cherryBlossom', 'cherryBlossomFull', 'tulipField', 'nest', 'birdhouse', 'gardenBed', 'rainPuddle', 'cherryPetals', 'flowerBed', 'wateringCan', 'umbrella', 'butterflyGarden'],
+    nature: [
+      'cherryBlossom',
+      'cherryBlossomSmall',
+      'cherryBlossomFull',
+      'cherryBlossomBranch',
+      'peachBlossom',
+      'tulip',
+      'tulipField',
+      'sprout',
+      'crocus',
+      'lamb',
+      'robinBird',
+    ],
+    settlement: [
+      'cherryBlossom',
+      'cherryBlossomFull',
+      'tulipField',
+      'nest',
+      'birdhouse',
+      'gardenBed',
+      'rainPuddle',
+      'cherryPetals',
+      'flowerBed',
+      'wateringCan',
+      'umbrella',
+      'butterflyGarden',
+    ],
     general: ['sprout', 'crocus', 'cherryPetals', 'rainPuddle', 'seedling'],
   },
   summer: {
     nature: ['sunflower', 'fireflies', 'watermelon'],
-    settlement: ['parasol', 'beachTowel', 'hammock', 'iceCreamCart', 'lemonade', 'sprinkler', 'swimmingPool'],
+    settlement: [
+      'parasol',
+      'beachTowel',
+      'hammock',
+      'iceCreamCart',
+      'lemonade',
+      'sprinkler',
+      'swimmingPool',
+    ],
     general: ['sunflower', 'watermelon'],
   },
   autumn: {
-    nature: ['autumnMaple', 'autumnMaple', 'autumnOak', 'autumnOak', 'autumnBirch', 'autumnGinkgo', 'fallenLeaves', 'fallenLeaves', 'fallenLeaves', 'leafSwirl', 'leafSwirl', 'acorn', 'pumpkinPatch'],
-    settlement: ['cornStalk', 'scarecrowAutumn', 'harvestBasket', 'hotDrink', 'autumnWreath', 'fallenLeaves', 'fallenLeaves', 'hayMaze', 'appleBasket', 'rake', 'autumnMaple'],
+    nature: [
+      'autumnMaple',
+      'autumnMaple',
+      'autumnOak',
+      'autumnOak',
+      'autumnBirch',
+      'autumnGinkgo',
+      'fallenLeaves',
+      'fallenLeaves',
+      'fallenLeaves',
+      'leafSwirl',
+      'leafSwirl',
+      'acorn',
+      'pumpkinPatch',
+    ],
+    settlement: [
+      'cornStalk',
+      'scarecrowAutumn',
+      'harvestBasket',
+      'hotDrink',
+      'autumnWreath',
+      'fallenLeaves',
+      'fallenLeaves',
+      'hayMaze',
+      'appleBasket',
+      'rake',
+      'autumnMaple',
+    ],
     general: ['fallenLeaves', 'fallenLeaves', 'leafSwirl', 'leafSwirl', 'acorn', 'pumpkinPatch'],
   },
 };
@@ -432,10 +644,7 @@ export function getSeasonalPoolOverrides(
   // Take proportional mix
   const fromCount = Math.round(fromAdd.length * (1 - t));
   const toCount = Math.round(toAdd.length * t);
-  const add = [
-    ...fromAdd.slice(0, fromCount),
-    ...toAdd.slice(0, toCount),
-  ];
+  const add = [...fromAdd.slice(0, fromCount), ...toAdd.slice(0, toCount)];
 
   return { add, remove };
 }

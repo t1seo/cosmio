@@ -34,7 +34,7 @@ export function remap(
   inMin: number,
   inMax: number,
   outMin: number,
-  outMax: number
+  outMax: number,
 ): number {
   const t = (value - inMin) / (inMax - inMin);
   return lerp(outMin, outMax, t);

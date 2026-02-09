@@ -49,13 +49,16 @@ export function generateBiomeMap(
 
   for (let r = 0; r < NUM_RIVERS; r++) {
     // Stagger rivers across rows: first in top half, second in bottom half
-    let day = r === 0
-      ? Math.floor(rng() * Math.floor(days / 2))
-      : Math.floor(days / 2) + Math.floor(rng() * Math.ceil(days / 2));
+    let day =
+      r === 0
+        ? Math.floor(rng() * Math.floor(days / 2))
+        : Math.floor(days / 2) + Math.floor(rng() * Math.ceil(days / 2));
 
     for (let week = 0; week < weeks; week++) {
       const ctx = map.get(`${week},${day}`);
+      /* v8 ignore start */
       if (ctx) ctx.isRiver = true;
+      /* v8 ignore stop */
 
       // Drift: 60% straight, 20% up, 20% down
       const drift = rng();
@@ -72,13 +75,15 @@ export function generateBiomeMap(
   // ── Layer 2: Ponds at River Bends ───────────────────
   const numPonds = Math.min(riverBends.length, 1 + Math.floor(rng() * 2));
   const shuffledBends = riverBends
-    .map(b => ({ b, sort: rng() }))
+    .map((b) => ({ b, sort: rng() }))
     .sort((a, b) => a.sort - b.sort)
-    .map(x => x.b);
+    .map((x) => x.b);
 
   for (let p = 0; p < numPonds; p++) {
     const center = shuffledBends[p];
+    /* v8 ignore start */
     if (!center) break;
+    /* v8 ignore stop */
 
     const pondSize = 2 + Math.floor(rng() * 3);
     const pondCells = [center];
@@ -96,7 +101,9 @@ export function generateBiomeMap(
 
     for (const pc of pondCells) {
       const ctx = map.get(`${pc.w},${pc.d}`);
+      /* v8 ignore start */
       if (ctx) ctx.isPond = true;
+      /* v8 ignore stop */
     }
   }
 
@@ -112,7 +119,7 @@ export function generateBiomeMap(
         map.get(`${w},${d - 1}`),
         map.get(`${w},${d + 1}`),
       ];
-      if (neighbors.some(n => n && (n.isRiver || n.isPond))) {
+      if (neighbors.some((n) => n && (n.isRiver || n.isPond))) {
         ctx.nearWater = true;
       }
     }

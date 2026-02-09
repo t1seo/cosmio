@@ -25,7 +25,7 @@ async function run(): Promise<void> {
     const outputDir = core.getInput('output_dir') || './';
     const yearInput = core.getInput('year');
     const hemisphereInput = core.getInput('hemisphere') || 'north';
-    const hemisphere = hemisphereInput === 'south' ? 'south' as const : 'north' as const;
+    const hemisphere = hemisphereInput === 'south' ? ('south' as const) : ('north' as const);
 
     // Determine username from GITHUB_ACTOR
     const username = process.env.GITHUB_ACTOR;
@@ -42,9 +42,7 @@ async function run(): Promise<void> {
     // Validate theme
     const theme = getTheme(themeName);
     if (!theme) {
-      throw new Error(
-        `Unknown theme "${themeName}". Available themes: ${listThemes().join(', ')}`
-      );
+      throw new Error(`Unknown theme "${themeName}". Available themes: ${listThemes().join(', ')}`);
     }
 
     const displayTitle = title || `@${username}`;

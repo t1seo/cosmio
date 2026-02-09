@@ -9,7 +9,12 @@ import { CONTRIBUTIONS_QUERY } from './queries.js';
 const GITHUB_API_ENDPOINT = 'https://api.github.com/graphql';
 
 /** GitHub's contribution level enum values */
-type GitHubContributionLevel = 'NONE' | 'FIRST_QUARTILE' | 'SECOND_QUARTILE' | 'THIRD_QUARTILE' | 'FOURTH_QUARTILE';
+type GitHubContributionLevel =
+  | 'NONE'
+  | 'FIRST_QUARTILE'
+  | 'SECOND_QUARTILE'
+  | 'THIRD_QUARTILE'
+  | 'FOURTH_QUARTILE';
 
 /** GraphQL API response structure */
 interface GitHubApiResponse {
@@ -68,7 +73,7 @@ function sleep(ms: number): Promise<void> {
 async function makeGraphQLRequest(
   query: string,
   variables: Record<string, unknown>,
-  token?: string
+  token?: string,
 ): Promise<GitHubApiResponse> {
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
@@ -135,8 +140,7 @@ async function makeGraphQLRequest(
       // Don't retry on user not found or authentication errors
       if (
         error instanceof Error &&
-        (error.message.includes('not found') ||
-         error.message.includes('Authentication failed'))
+        (error.message.includes('not found') || error.message.includes('Authentication failed'))
       ) {
         throw error;
       }
@@ -155,7 +159,9 @@ async function makeGraphQLRequest(
   }
 
   // This should never be reached, but TypeScript needs it
+  /* v8 ignore start */
   throw new Error('Network failure: maximum retry attempts exceeded');
+  /* v8 ignore stop */
 }
 
 /**
@@ -174,7 +180,7 @@ async function makeGraphQLRequest(
 export async function fetchContributions(
   username: string,
   year?: number,
-  token?: string
+  token?: string,
 ): Promise<ContributionData> {
   let from: string;
   let to: string;
@@ -196,11 +202,7 @@ export async function fetchContributions(
   }
 
   // Make the GraphQL request
-  const response = await makeGraphQLRequest(
-    CONTRIBUTIONS_QUERY,
-    { username, from, to },
-    token
-  );
+  const response = await makeGraphQLRequest(CONTRIBUTIONS_QUERY, { username, from, to }, token);
 
   // Extract contribution calendar data
   const calendar = response.data!.user!.contributionsCollection.contributionCalendar;

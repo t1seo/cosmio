@@ -59,13 +59,13 @@ export function renderStatsBar(stats: ContributionStats, palette: ThemePalette):
   const segments = items
     .map(
       (text, i) =>
-        `<text`
-        + ` x="${24 + i * 200}"`
-        + ` y="233"`
-        + ` font-family="${FONT_FAMILY}"`
-        + ` font-size="11"`
-        + ` fill="${palette.text.secondary}"`
-        + `>${escapeXml(text)}</text>`,
+        `<text` +
+        ` x="${24 + i * 200}"` +
+        ` y="233"` +
+        ` font-family="${FONT_FAMILY}"` +
+        ` font-size="11"` +
+        ` fill="${palette.text.secondary}"` +
+        `>${escapeXml(text)}</text>`,
     )
     .join('');
 
@@ -135,11 +135,11 @@ export function computeLevel10(count: number, maxCount: number): Level10 {
   const ratio = clamp(count / maxCount, 0, 1);
   if (ratio <= 0.06) return 1;
   if (ratio <= 0.12) return 2;
-  if (ratio <= 0.20) return 3;
-  if (ratio <= 0.30) return 4;
+  if (ratio <= 0.2) return 3;
+  if (ratio <= 0.3) return 4;
   if (ratio <= 0.42) return 5;
   if (ratio <= 0.55) return 6;
-  if (ratio <= 0.70) return 7;
+  if (ratio <= 0.7) return 7;
   if (ratio <= 0.85) return 8;
   return 9;
 }
@@ -158,7 +158,7 @@ export function enrichGridCells(cells: GridCell[], data: ContributionData): Grid
     }
   }
 
-  return cells.map(cell => ({
+  return cells.map((cell) => ({
     ...cell,
     level10: computeLevel10(cell.count, maxCount),
   }));
@@ -184,10 +184,7 @@ export function computeLevel100(count: number, maxCount: number): Level100 {
  * Uses the P90 of non-zero counts as the effective max, so outlier days
  * don't compress the entire range into low levels.
  */
-export function enrichGridCells100(
-  cells: GridCell[],
-  data: ContributionData,
-): GridCell100[] {
+export function enrichGridCells100(cells: GridCell[], data: ContributionData): GridCell100[] {
   const nonZeroCounts: number[] = [];
   for (const week of data.weeks) {
     for (const day of week.days) {
@@ -198,11 +195,10 @@ export function enrichGridCells100(
   // P90 of non-zero counts — outliers above this cap at level 99
   nonZeroCounts.sort((a, b) => a - b);
   const p90Index = Math.floor(nonZeroCounts.length * 0.9);
-  const effectiveMax = nonZeroCounts.length > 0
-    ? nonZeroCounts[Math.min(p90Index, nonZeroCounts.length - 1)]
-    : 1;
+  const effectiveMax =
+    nonZeroCounts.length > 0 ? nonZeroCounts[Math.min(p90Index, nonZeroCounts.length - 1)] : 1;
 
-  return cells.map(cell => ({
+  return cells.map((cell) => ({
     ...cell,
     level100: computeLevel100(cell.count, effectiveMax),
   }));

@@ -7,11 +7,7 @@ import type { SvgAttributes } from './types.js';
  * @param children - Optional child content
  * @returns SVG element string
  */
-export function svgElement(
-  tag: string,
-  attrs: SvgAttributes,
-  children?: string
-): string {
+export function svgElement(tag: string, attrs: SvgAttributes, children?: string): string {
   const attrString = Object.entries(attrs)
     .map(([key, value]) => `${key}="${value}"`)
     .join(' ');
@@ -73,12 +69,7 @@ export function svgGroup(attrs: SvgAttributes, children: string): string {
  * @param attrs - Optional additional attributes
  * @returns text element string
  */
-export function svgText(
-  x: number,
-  y: number,
-  text: string,
-  attrs?: SvgAttributes
-): string {
+export function svgText(x: number, y: number, text: string, attrs?: SvgAttributes): string {
   const mergedAttrs: SvgAttributes = {
     x,
     y,
@@ -94,11 +85,7 @@ export function svgText(
  * @param attrs - Optional additional attributes
  * @returns filter element string
  */
-export function svgFilter(
-  id: string,
-  content: string,
-  attrs?: SvgAttributes
-): string {
+export function svgFilter(id: string, content: string, attrs?: SvgAttributes): string {
   const defaultAttrs: SvgAttributes = {
     id,
     x: '-50%',
@@ -120,7 +107,7 @@ export function svgFilter(
 export function svgGradient(
   type: 'linear' | 'radial',
   id: string,
-  stops: Array<{ offset: string; color: string; opacity?: number }>
+  stops: Array<{ offset: string; color: string; opacity?: number }>,
 ): string {
   const tag = type === 'linear' ? 'linearGradient' : 'radialGradient';
   const stopsContent = stops

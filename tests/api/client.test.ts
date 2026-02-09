@@ -116,10 +116,26 @@ describe('fetchContributions', () => {
                 {
                   contributionDays: [
                     { date: '2025-01-05', contributionCount: 0, contributionLevel: 'NONE' },
-                    { date: '2025-01-06', contributionCount: 1, contributionLevel: 'FIRST_QUARTILE' },
-                    { date: '2025-01-07', contributionCount: 4, contributionLevel: 'SECOND_QUARTILE' },
-                    { date: '2025-01-08', contributionCount: 8, contributionLevel: 'THIRD_QUARTILE' },
-                    { date: '2025-01-09', contributionCount: 15, contributionLevel: 'FOURTH_QUARTILE' },
+                    {
+                      date: '2025-01-06',
+                      contributionCount: 1,
+                      contributionLevel: 'FIRST_QUARTILE',
+                    },
+                    {
+                      date: '2025-01-07',
+                      contributionCount: 4,
+                      contributionLevel: 'SECOND_QUARTILE',
+                    },
+                    {
+                      date: '2025-01-08',
+                      contributionCount: 8,
+                      contributionLevel: 'THIRD_QUARTILE',
+                    },
+                    {
+                      date: '2025-01-09',
+                      contributionCount: 15,
+                      contributionLevel: 'FOURTH_QUARTILE',
+                    },
                     { date: '2025-01-10', contributionCount: 0, contributionLevel: 'NONE' },
                     { date: '2025-01-11', contributionCount: 0, contributionLevel: 'NONE' },
                   ],
@@ -182,7 +198,9 @@ describe('fetchContributions', () => {
 
   it('should throw on user not found (GraphQL error)', async () => {
     const errorResponse = {
-      errors: [{ type: 'NOT_FOUND', message: 'Could not resolve to a User with the login of "ghost"' }],
+      errors: [
+        { type: 'NOT_FOUND', message: 'Could not resolve to a User with the login of "ghost"' },
+      ],
     };
 
     fetchMock.mockResolvedValueOnce(mockResponse(errorResponse));
@@ -309,5 +327,149 @@ describe('fetchContributions', () => {
 
     // Should NOT retry on auth failure
     expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  // ── Unknown contribution level (default case) ──────────────
+
+  it('should map unknown contribution levels to 0', async () => {
+    const apiResponse = {
+      data: {
+        user: {
+          contributionsCollection: {
+            contributionCalendar: {
+              totalContributions: 1,
+              weeks: [
+                {
+                  contributionDays: [
+                    {
+                      date: '2025-01-05',
+                      contributionCount: 3,
+                      contributionLevel: 'UNKNOWN_LEVEL',
+                    },
+                  ],
+                },
+              ],
+            },
+          },
+        },
+      },
+    };
+
+    fetchMock.mockResolvedValueOnce(mockResponse(apiResponse));
+    const result = await fetchContributions('testuser', 2025, 'ghp_token');
+
+    expect(result.weeks[0].days[0].level).toBe(0);
+    expect(result.weeks[0].days[0].count).toBe(3);
+  });
+
+  // ── Generic GraphQL error (not NOT_FOUND, not rate limit) ──
+
+  it('should throw on generic GraphQL error after retries', async () => {
+    const genericError = {
+      errors: [{ type: 'SOME_ERROR', message: 'Something went wrong' }],
+    };
+
+    fetchMock
+      .mockResolvedValueOnce(mockResponse(genericError))
+      .mockResolvedValueOnce(mockResponse(genericError))
+      .mockResolvedValueOnce(mockResponse(genericError));
+
+    const resultPromise = fetchContributions('testuser', 2025, 'ghp_token');
+    let caughtError: Error | undefined;
+    const settled = resultPromise.catch((err: Error) => {
+      caughtError = err;
+    });
+
+    await vi.advanceTimersByTimeAsync(8000);
+    await settled;
+
+    expect(caughtError).toBeDefined();
+    expect(caughtError!.message).toMatch(/Network failure/);
+  });
+
+  // ── HTTP 403 without GraphQL errors ───────────────────────
+
+  it('should throw rate limit on HTTP 403 without error body', async () => {
+    fetchMock
+      .mockResolvedValueOnce(mockResponse({ data: null }, 403, 'Forbidden'))
+      .mockResolvedValueOnce(mockResponse({ data: null }, 403, 'Forbidden'))
+      .mockResolvedValueOnce(mockResponse({ data: null }, 403, 'Forbidden'));
+
+    const resultPromise = fetchContributions('testuser', 2025, 'ghp_token');
+    let caughtError: Error | undefined;
+    const settled = resultPromise.catch((err: Error) => {
+      caughtError = err;
+    });
+
+    await vi.advanceTimersByTimeAsync(8000);
+    await settled;
+
+    expect(caughtError).toBeDefined();
+    expect(caughtError!.message).toMatch(/Network failure/);
+  });
+
+  // ── Generic HTTP error (500) ──────────────────────────────
+
+  it('should throw on generic HTTP error (500)', async () => {
+    fetchMock
+      .mockResolvedValueOnce(mockResponse({ data: null }, 500, 'Internal Server Error'))
+      .mockResolvedValueOnce(mockResponse({ data: null }, 500, 'Internal Server Error'))
+      .mockResolvedValueOnce(mockResponse({ data: null }, 500, 'Internal Server Error'));
+
+    const resultPromise = fetchContributions('testuser', 2025, 'ghp_token');
+    let caughtError: Error | undefined;
+    const settled = resultPromise.catch((err: Error) => {
+      caughtError = err;
+    });
+
+    await vi.advanceTimersByTimeAsync(8000);
+    await settled;
+
+    expect(caughtError).toBeDefined();
+    expect(caughtError!.message).toMatch(/Network failure/);
+  });
+
+  // ── Non-Error thrown by fetch ─────────────────────────────
+
+  it('should handle non-Error thrown by fetch', async () => {
+    fetchMock
+      .mockRejectedValueOnce('string error')
+      .mockRejectedValueOnce('string error')
+      .mockRejectedValueOnce('string error');
+
+    const resultPromise = fetchContributions('testuser', 2025, 'ghp_token');
+    let caughtError: Error | undefined;
+    const settled = resultPromise.catch((err: Error) => {
+      caughtError = err;
+    });
+
+    await vi.advanceTimersByTimeAsync(8000);
+    await settled;
+
+    expect(caughtError).toBeDefined();
+    expect(caughtError!.message).toMatch(/Network failure: string error/);
+  });
+
+  // ── Rolling window (no year parameter) ─────────────────────
+
+  it('should use rolling 52-week window when year is omitted', async () => {
+    const apiResponse = createMockApiResponse(42);
+    fetchMock.mockResolvedValueOnce(mockResponse(apiResponse));
+
+    const result = await fetchContributions('testuser', undefined, 'ghp_token');
+
+    // Verify the request used ISO date strings (rolling window format)
+    const [, requestInit] = fetchMock.mock.calls[0] as [string, RequestInit];
+    const body = JSON.parse(requestInit.body as string) as {
+      variables: { from: string; to: string };
+    };
+
+    // Rolling window dates should be full ISO strings (contain 'T'), not fixed-year format
+    expect(body.variables.from).toMatch(/T/);
+    expect(body.variables.to).toMatch(/T/);
+
+    // The effective year should be the current year
+    expect(result.year).toBe(new Date().getFullYear());
+    expect(result.username).toBe('testuser');
   });
 });

@@ -30,7 +30,7 @@ program
   .option('--token <token>', 'GitHub personal access token (or use GITHUB_TOKEN env)')
   .option('--hemisphere <hemisphere>', 'Hemisphere for seasonal terrain (north or south)', 'north')
   .action(async (opts) => {
-    const hemisphere = opts.hemisphere === 'south' ? 'south' as const : 'north' as const;
+    const hemisphere = opts.hemisphere === 'south' ? ('south' as const) : ('north' as const);
     const options: CliOptions = {
       user: opts.user,
       theme: opts.theme,

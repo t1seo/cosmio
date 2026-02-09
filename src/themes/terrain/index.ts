@@ -13,7 +13,17 @@ import { registerTheme } from '../registry.js';
 import { contributionGrid, enrichGridCells100, renderTitle, renderStatsBar } from '../shared.js';
 import { getSeasonalPalette100 } from './palette.js';
 import { renderSeasonalTerrainBlocks, getIsoCells } from './blocks.js';
-import { renderTerrainCSS, renderAnimatedOverlays, renderClouds, renderWaterOverlays, renderWaterRipples, renderCelestials, renderSnowParticles, renderFallingPetals, renderFallingLeaves } from './effects.js';
+import {
+  renderTerrainCSS,
+  renderAnimatedOverlays,
+  renderClouds,
+  renderWaterOverlays,
+  renderWaterRipples,
+  renderCelestials,
+  renderSnowParticles,
+  renderFallingPetals,
+  renderFallingLeaves,
+} from './effects.js';
 import { renderSeasonalTerrainAssets, renderAssetCSS } from './assets.js';
 import { generateBiomeMap } from './biomes.js';
 import { hash } from '../../utils/math.js';
@@ -55,11 +65,7 @@ const terrainTheme: Theme = {
  * 10. Title (top-left)
  * 11. Stats bar (bottom)
  */
-function renderMode(
-  data: ContributionData,
-  options: ThemeOptions,
-  mode: ColorMode,
-): string {
+function renderMode(data: ContributionData, options: ThemeOptions, mode: ColorMode): string {
   const hemisphere: Hemisphere = options.hemisphere || 'north';
   const oldestDate = new Date(data.weeks[0]?.days[0]?.date || new Date());
   const seasonRotation = computeSeasonRotation(oldestDate, hemisphere);
@@ -105,7 +111,12 @@ function renderMode(
 
   // Use seasonal terrain blocks with per-week palettes
   const blocks = renderSeasonalTerrainBlocks(
-    cells100, weekPalettes, originX, originY, seasonRotation, biomeMap,
+    cells100,
+    weekPalettes,
+    originX,
+    originY,
+    seasonRotation,
+    biomeMap,
   );
 
   const waterOverlays = renderWaterOverlays(isoCells, palette, biomeMap);
@@ -113,7 +124,12 @@ function renderMode(
 
   // Use seasonal terrain assets with per-week palettes
   const assets = renderSeasonalTerrainAssets(
-    isoCells, seed, weekPalettes, variantSeed, biomeMap, seasonRotation,
+    isoCells,
+    seed,
+    weekPalettes,
+    variantSeed,
+    biomeMap,
+    seasonRotation,
   );
 
   // Seasonal particle effects
@@ -126,10 +142,12 @@ function renderMode(
   // Build ThemePalette bridge for shared utilities
   // Sample 5 anchor levels across the 100-level range
   const anchorLevels = [0, 20, 45, 70, 95];
-  const levelColors = anchorLevels.map((l): PaletteColor => ({
-    hex: palette.getElevation(l).top,
-    opacity: l === 0 ? 0.5 : 1,
-  })) as [PaletteColor, PaletteColor, PaletteColor, PaletteColor, PaletteColor];
+  const levelColors = anchorLevels.map(
+    (l): PaletteColor => ({
+      hex: palette.getElevation(l).top,
+      opacity: l === 0 ? 0.5 : 1,
+    }),
+  ) as [PaletteColor, PaletteColor, PaletteColor, PaletteColor, PaletteColor];
 
   const themePalette: ThemePalette = {
     text: palette.text,
@@ -157,10 +175,7 @@ function renderMode(
     statsBar,
   ].join('\n');
 
-  return svgRoot(
-    { width: options.width, height: options.height },
-    content,
-  );
+  return svgRoot({ width: options.width, height: options.height }, content);
 }
 
 // ── Registration ─────────────────────────────────────────────
