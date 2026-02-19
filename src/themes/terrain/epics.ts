@@ -11,38 +11,38 @@ import { computeRichness } from './assets.js';
 export type EpicTier = 'rare' | 'epic' | 'legendary';
 
 export type EpicBuildingType =
-  // Rare (14)
-  | 'pyramid'
+  // Rare — 7 natural + 7 landmark (14)
+  | 'mountFuji'
   | 'colosseum'
-  | 'parthenon'
-  | 'sphinx'
+  | 'giantSequoia'
+  | 'coralReef'
   | 'pagoda'
   | 'torii'
-  | 'greatWall'
-  | 'templeOfHeaven'
+  | 'geyser'
+  | 'hotSpring'
   | 'eiffelTower'
-  | 'bigBen'
+  | 'grandCanyon'
   | 'windmillGrand'
-  | 'observatory'
+  | 'oasis'
   | 'volcano'
   | 'giantMushroom'
-  // Epic (10)
-  | 'forbiddenCity'
+  // Epic — 7 natural + 3 landmark (10)
+  | 'aurora'
   | 'tajMahal'
-  | 'notreDame'
+  | 'giantWaterfall'
   | 'stBasils'
-  | 'colossusLighthouse'
+  | 'bambooGrove'
   | 'operaHouse'
-  | 'skyscraper'
-  | 'enchantedForge'
-  | 'ancientRuins'
+  | 'glacierPeak'
+  | 'bioluminescentPool'
+  | 'meteorCrater'
   | 'bonsaiGiant'
-  // Legendary (6)
+  // Legendary — 5 natural + 1 structure (6)
   | 'floatingIsland'
   | 'crystalSpire'
   | 'dragonNest'
   | 'worldTree'
-  | 'skyTemple'
+  | 'sakuraEternal'
   | 'ancientPortal';
 
 export interface PlacedEpicBuilding {
@@ -98,38 +98,38 @@ interface EpicBuildingDef {
 }
 
 const EPIC_BUILDINGS: EpicBuildingDef[] = [
-  // Rare (14)
-  { type: 'pyramid', tier: 'rare' },
+  // Rare (14) — 9 natural, 5 landmark
+  { type: 'mountFuji', tier: 'rare' },
   { type: 'colosseum', tier: 'rare' },
-  { type: 'parthenon', tier: 'rare' },
-  { type: 'sphinx', tier: 'rare' },
+  { type: 'giantSequoia', tier: 'rare' },
+  { type: 'coralReef', tier: 'rare' },
   { type: 'pagoda', tier: 'rare' },
   { type: 'torii', tier: 'rare' },
-  { type: 'greatWall', tier: 'rare' },
-  { type: 'templeOfHeaven', tier: 'rare' },
+  { type: 'geyser', tier: 'rare' },
+  { type: 'hotSpring', tier: 'rare' },
   { type: 'eiffelTower', tier: 'rare' },
-  { type: 'bigBen', tier: 'rare' },
+  { type: 'grandCanyon', tier: 'rare' },
   { type: 'windmillGrand', tier: 'rare' },
-  { type: 'observatory', tier: 'rare' },
+  { type: 'oasis', tier: 'rare' },
   { type: 'volcano', tier: 'rare' },
   { type: 'giantMushroom', tier: 'rare' },
-  // Epic (10)
-  { type: 'forbiddenCity', tier: 'epic' },
+  // Epic (10) — 7 natural, 3 landmark
+  { type: 'aurora', tier: 'epic' },
   { type: 'tajMahal', tier: 'epic' },
-  { type: 'notreDame', tier: 'epic' },
+  { type: 'giantWaterfall', tier: 'epic' },
   { type: 'stBasils', tier: 'epic' },
-  { type: 'colossusLighthouse', tier: 'epic' },
+  { type: 'bambooGrove', tier: 'epic' },
   { type: 'operaHouse', tier: 'epic' },
-  { type: 'skyscraper', tier: 'epic' },
-  { type: 'enchantedForge', tier: 'epic' },
-  { type: 'ancientRuins', tier: 'epic' },
+  { type: 'glacierPeak', tier: 'epic' },
+  { type: 'bioluminescentPool', tier: 'epic' },
+  { type: 'meteorCrater', tier: 'epic' },
   { type: 'bonsaiGiant', tier: 'epic' },
-  // Legendary (6)
+  // Legendary (6) — 5 natural, 1 structure
   { type: 'floatingIsland', tier: 'legendary' },
   { type: 'crystalSpire', tier: 'legendary' },
   { type: 'dragonNest', tier: 'legendary' },
   { type: 'worldTree', tier: 'legendary' },
-  { type: 'skyTemple', tier: 'legendary' },
+  { type: 'sakuraEternal', tier: 'legendary' },
   { type: 'ancientPortal', tier: 'legendary' },
 ];
 
@@ -246,22 +246,128 @@ export function selectEpicBuildings(
   return { placed, epicCells };
 }
 
-// ── SVG Renderers (30 buildings) ───────────────────────────
+// ── SVG Renderers (30 wonders) ─────────────────────────────
 
 type EpicRenderer = (x: number, y: number, c: AssetColors) => string;
 
-// ── Rare Tier ──
+// ── Rare Tier — Natural Wonders ──
 
-function renderPyramid(x: number, y: number, c: AssetColors): string {
+function renderMountFuji(x: number, y: number, c: AssetColors): string {
   return (
     `<g transform="translate(${x},${y})">` +
-    `<polygon points="-5,0 0,-10 5,0" fill="${c.epicGold}"/>` +
-    `<polygon points="0,-10 5,0 0,0" fill="${c.epicGold}" opacity="0.7"/>` +
-    `<line x1="-3.5" y1="-3" x2="3.5" y2="-3" stroke="${c.epicGold}" stroke-width="0.3" opacity="0.5"/>` +
-    `<line x1="-2" y1="-6" x2="2" y2="-6" stroke="${c.epicGold}" stroke-width="0.3" opacity="0.5"/>` +
+    // Mountain body
+    `<polygon points="-6,0 0,-12 6,0" fill="${c.boulder}"/>` +
+    `<polygon points="0,-12 6,0 0,0" fill="${c.rock}" opacity="0.7"/>` +
+    // Snow cap
+    `<polygon points="-2.5,-8 0,-12 2.5,-8" fill="${c.snowCap}"/>` +
+    `<polygon points="0,-12 2.5,-8 0,-8" fill="${c.snowGround}" opacity="0.8"/>` +
+    // Snow edge detail
+    `<path d="M-2.5,-8 Q-1.5,-7.2 0,-8 Q1.5,-7.2 2.5,-8" fill="${c.snowCap}" opacity="0.6"/>` +
     `</g>`
   );
 }
+
+function renderGiantSequoia(x: number, y: number, c: AssetColors): string {
+  return (
+    `<g transform="translate(${x},${y})">` +
+    // Massive trunk
+    `<rect x="-1.8" y="-6" width="3.6" height="6" fill="${c.trunk}" rx="0.8"/>` +
+    `<rect x="-1.2" y="-6" width="2.4" height="6" fill="${c.trunk}" opacity="0.7"/>` +
+    // Wide canopy layers
+    `<ellipse cx="0" cy="-8" rx="5" ry="3" fill="${c.epicJade}"/>` +
+    `<ellipse cx="-1.5" cy="-10" rx="3.5" ry="2.5" fill="${c.epicJade}" opacity="0.85"/>` +
+    `<ellipse cx="1.5" cy="-10.5" rx="3" ry="2" fill="${c.epicJade}" opacity="0.8"/>` +
+    `<ellipse cx="0" cy="-12" rx="2.5" ry="1.8" fill="${c.epicJade}" opacity="0.75"/>` +
+    `</g>`
+  );
+}
+
+function renderCoralReef(x: number, y: number, c: AssetColors): string {
+  return (
+    `<g transform="translate(${x},${y})">` +
+    // Reef base
+    `<ellipse cx="0" cy="-0.5" rx="5" ry="1.5" fill="${c.coral}" opacity="0.5"/>` +
+    // Branching coral structures
+    `<path d="M-3,0 L-3,-4 L-4,-5 M-3,-3 L-2,-5" stroke="${c.coral}" stroke-width="0.8" fill="none"/>` +
+    `<path d="M1,0 L1,-5 L0,-6.5 M1,-3 L2,-5" stroke="${c.epicMagic}" stroke-width="0.7" fill="none"/>` +
+    `<path d="M3.5,0 L3.5,-3 L4,-4.5" stroke="${c.epicPortal}" stroke-width="0.6" fill="none"/>` +
+    // Rounded coral heads
+    `<circle cx="-3.5" cy="-5.2" r="0.8" fill="${c.coral}"/>` +
+    `<circle cx="-1.8" cy="-5.3" r="0.6" fill="${c.coral}" opacity="0.8"/>` +
+    `<circle cx="0" cy="-6.8" r="0.9" fill="${c.epicMagic}"/>` +
+    `<circle cx="2.2" cy="-5.2" r="0.7" fill="${c.epicMagic}" opacity="0.8"/>` +
+    `<circle cx="4" cy="-4.8" r="0.6" fill="${c.epicPortal}"/>` +
+    `</g>`
+  );
+}
+
+function renderGeyser(x: number, y: number, c: AssetColors): string {
+  return (
+    `<g transform="translate(${x},${y})">` +
+    // Rocky mound
+    `<ellipse cx="0" cy="0" rx="3" ry="1.2" fill="${c.rock}"/>` +
+    `<ellipse cx="0" cy="-0.5" rx="2" ry="0.8" fill="${c.boulder}"/>` +
+    // Erupting water column
+    `<path d="M-0.8,-1 Q-0.5,-6 0,-9 Q0.5,-6 0.8,-1" fill="${c.epicCrystal}" opacity="0.5"/>` +
+    `<path d="M-0.4,-1 Q0,-7 0.4,-1" fill="${c.epicCrystal}" opacity="0.3"/>` +
+    // Steam/mist particles
+    `<circle cx="-1" cy="-8" r="0.6" fill="${c.epicCrystal}" opacity="0.3"/>` +
+    `<circle cx="0.8" cy="-9.5" r="0.5" fill="${c.epicCrystal}" opacity="0.25"/>` +
+    `<circle cx="0" cy="-10.5" r="0.4" fill="${c.epicCrystal}" opacity="0.2"/>` +
+    `</g>`
+  );
+}
+
+function renderHotSpring(x: number, y: number, c: AssetColors): string {
+  return (
+    `<g transform="translate(${x},${y})">` +
+    // Rocky rim
+    `<ellipse cx="0" cy="0" rx="4.5" ry="2" fill="${c.rock}"/>` +
+    // Warm pool
+    `<ellipse cx="0" cy="-0.3" rx="3.5" ry="1.5" fill="${c.epicCrystal}" opacity="0.5"/>` +
+    `<ellipse cx="0" cy="-0.5" rx="2.5" ry="1" fill="${c.epicPortal}" opacity="0.3"/>` +
+    // Steam wisps
+    `<path d="M-1.5,-1 Q-2,-3 -1,-4" stroke="${c.epicCrystal}" stroke-width="0.3" fill="none" opacity="0.4"/>` +
+    `<path d="M0.5,-1 Q0,-3 1,-4.5" stroke="${c.epicCrystal}" stroke-width="0.3" fill="none" opacity="0.35"/>` +
+    `<path d="M2,-1 Q2.5,-2.5 2,-3.5" stroke="${c.epicCrystal}" stroke-width="0.25" fill="none" opacity="0.3"/>` +
+    `</g>`
+  );
+}
+
+function renderGrandCanyon(x: number, y: number, c: AssetColors): string {
+  return (
+    `<g transform="translate(${x},${y})">` +
+    // Layered rock strata — left wall
+    `<polygon points="-6,0 -5,-6 -3,-5 -2,-7 -1,-3" fill="${c.boulder}"/>` +
+    `<polygon points="-6,0 -5,-4 -3,-3 -1,-3 -1,0" fill="${c.rock}" opacity="0.7"/>` +
+    // Right wall
+    `<polygon points="1,-3 2,-7 3,-5 5,-6 6,0" fill="${c.boulder}"/>` +
+    `<polygon points="1,-3 1,0 6,0 5,-4 3,-3" fill="${c.rock}" opacity="0.7"/>` +
+    // Canyon floor hint
+    `<line x1="-0.5" y1="0" x2="0.5" y2="0" stroke="${c.epicCrystal}" stroke-width="0.4" opacity="0.5"/>` +
+    `</g>`
+  );
+}
+
+function renderOasis(x: number, y: number, c: AssetColors): string {
+  return (
+    `<g transform="translate(${x},${y})">` +
+    // Water pool
+    `<ellipse cx="0" cy="0" rx="4" ry="1.5" fill="${c.epicCrystal}" opacity="0.5"/>` +
+    `<ellipse cx="0" cy="-0.2" rx="3" ry="1" fill="${c.epicCrystal}" opacity="0.3"/>` +
+    // Palm trees
+    `<line x1="-2.5" y1="0" x2="-2.5" y2="-6" stroke="${c.trunk}" stroke-width="0.6"/>` +
+    `<path d="M-2.5,-6 Q-4.5,-5 -5,-4" stroke="${c.palm}" stroke-width="0.5" fill="none"/>` +
+    `<path d="M-2.5,-6 Q-0.5,-5 0.5,-5" stroke="${c.palm}" stroke-width="0.5" fill="none"/>` +
+    `<path d="M-2.5,-6 Q-3,-4.5 -3.5,-3.5" stroke="${c.palm}" stroke-width="0.4" fill="none"/>` +
+    `<line x1="2" y1="0" x2="2" y2="-5" stroke="${c.trunk}" stroke-width="0.5"/>` +
+    `<path d="M2,-5 Q4,-4 4.5,-3" stroke="${c.palm}" stroke-width="0.4" fill="none"/>` +
+    `<path d="M2,-5 Q0.5,-4 -0.5,-4" stroke="${c.palm}" stroke-width="0.4" fill="none"/>` +
+    `</g>`
+  );
+}
+
+// ── Rare Tier — Landmarks ──
 
 function renderColosseum(x: number, y: number, c: AssetColors): string {
   return (
@@ -274,30 +380,6 @@ function renderColosseum(x: number, y: number, c: AssetColors): string {
     `<line x1="0" y1="-5" x2="0" y2="-2" stroke="${c.wall}" stroke-width="0.5"/>` +
     `<line x1="2" y1="-5" x2="2" y2="-2" stroke="${c.wall}" stroke-width="0.5"/>` +
     `<line x1="4" y1="-5" x2="4" y2="-2" stroke="${c.wall}" stroke-width="0.5"/>` +
-    `</g>`
-  );
-}
-
-function renderParthenon(x: number, y: number, c: AssetColors): string {
-  return (
-    `<g transform="translate(${x},${y})">` +
-    `<rect x="-5" y="-2" width="10" height="2" fill="${c.epicMarble}"/>` +
-    `<polygon points="-5,-8 0,-11 5,-8" fill="${c.epicMarble}"/>` +
-    `<line x1="-4" y1="-2" x2="-4" y2="-8" stroke="${c.epicMarble}" stroke-width="0.8"/>` +
-    `<line x1="-1.3" y1="-2" x2="-1.3" y2="-8" stroke="${c.epicMarble}" stroke-width="0.8"/>` +
-    `<line x1="1.3" y1="-2" x2="1.3" y2="-8" stroke="${c.epicMarble}" stroke-width="0.8"/>` +
-    `<line x1="4" y1="-2" x2="4" y2="-8" stroke="${c.epicMarble}" stroke-width="0.8"/>` +
-    `</g>`
-  );
-}
-
-function renderSphinx(x: number, y: number, c: AssetColors): string {
-  return (
-    `<g transform="translate(${x},${y})">` +
-    `<ellipse cx="0" cy="-1" rx="4" ry="1.5" fill="${c.epicGold}"/>` +
-    `<rect x="-1.5" y="-5" width="3" height="4" fill="${c.epicGold}" rx="0.5"/>` +
-    `<circle cx="0" cy="-6" r="1.5" fill="${c.epicGold}"/>` +
-    `<rect x="3" y="-2" width="2" height="1" fill="${c.epicGold}" rx="0.3"/>` +
     `</g>`
   );
 }
@@ -327,33 +409,6 @@ function renderTorii(x: number, y: number, c: AssetColors): string {
   );
 }
 
-function renderGreatWall(x: number, y: number, c: AssetColors): string {
-  return (
-    `<g transform="translate(${x},${y})">` +
-    `<rect x="-6" y="-4" width="12" height="4" fill="${c.rock}"/>` +
-    `<rect x="-6" y="-5.2" width="1.5" height="1.5" fill="${c.rock}"/>` +
-    `<rect x="-3.5" y="-5.2" width="1.5" height="1.5" fill="${c.rock}"/>` +
-    `<rect x="-1" y="-5.2" width="1.5" height="1.5" fill="${c.rock}"/>` +
-    `<rect x="1.5" y="-5.2" width="1.5" height="1.5" fill="${c.rock}"/>` +
-    `<rect x="4.5" y="-5.2" width="1.5" height="1.5" fill="${c.rock}"/>` +
-    `<rect x="4" y="-8" width="2.5" height="4" fill="${c.rock}"/>` +
-    `<polygon points="4,-8 5.25,-10 6.5,-8" fill="${c.roofA}"/>` +
-    `</g>`
-  );
-}
-
-function renderTempleOfHeaven(x: number, y: number, c: AssetColors): string {
-  return (
-    `<g transform="translate(${x},${y})">` +
-    `<ellipse cx="0" cy="-1" rx="5" ry="1.5" fill="${c.epicMarble}"/>` +
-    `<path d="M-4,-3 Q0,-6 4,-3" fill="${c.epicJade}"/>` +
-    `<path d="M-3,-5 Q0,-8 3,-5" fill="${c.epicJade}"/>` +
-    `<path d="M-2,-7 Q0,-10 2,-7" fill="${c.epicJade}"/>` +
-    `<circle cx="0" cy="-10.5" r="0.5" fill="${c.epicGold}"/>` +
-    `</g>`
-  );
-}
-
 function renderEiffelTower(x: number, y: number, c: AssetColors): string {
   return (
     `<g transform="translate(${x},${y})">` +
@@ -363,19 +418,6 @@ function renderEiffelTower(x: number, y: number, c: AssetColors): string {
     `<line x1="-2" y1="-3" x2="2" y2="-3" stroke="${c.boulder}" stroke-width="0.4"/>` +
     `<line x1="-1.3" y1="-6" x2="1.3" y2="-6" stroke="${c.boulder}" stroke-width="0.4"/>` +
     `<rect x="-1.5" y="-10.5" width="3" height="1" fill="${c.boulder}"/>` +
-    `</g>`
-  );
-}
-
-function renderBigBen(x: number, y: number, c: AssetColors): string {
-  return (
-    `<g transform="translate(${x},${y})">` +
-    `<rect x="-2" y="-10" width="4" height="10" fill="${c.epicMarble}"/>` +
-    `<polygon points="-2.5,-10 0,-13 2.5,-10" fill="${c.roofB}"/>` +
-    `<circle cx="0" cy="-8" r="1.2" fill="${c.epicGold}"/>` +
-    `<line x1="0" y1="-8" x2="0" y2="-9" stroke="${c.shadow}" stroke-width="0.3"/>` +
-    `<line x1="0" y1="-8" x2="0.6" y2="-7.6" stroke="${c.shadow}" stroke-width="0.2"/>` +
-    `<rect x="-1.2" y="-4" width="2.4" height="1.5" fill="${c.wallShade}"/>` +
     `</g>`
   );
 }
@@ -395,16 +437,6 @@ function renderWindmillGrand(x: number, y: number, c: AssetColors): string {
     `</g>` +
     `</g>` +
     `<circle cx="0" cy="-7" r="0.6" fill="${c.boulder}"/>` +
-    `</g>`
-  );
-}
-
-function renderObservatory(x: number, y: number, c: AssetColors): string {
-  return (
-    `<g transform="translate(${x},${y})">` +
-    `<rect x="-3" y="-5" width="6" height="5" fill="${c.epicMarble}"/>` +
-    `<path d="M-3,-5 Q0,-9 3,-5" fill="${c.rock}"/>` +
-    `<rect x="1" y="-7.5" width="1" height="3" fill="${c.boulder}" transform="rotate(-30,1.5,-6)"/>` +
     `</g>`
   );
 }
@@ -433,21 +465,110 @@ function renderGiantMushroom(x: number, y: number, c: AssetColors): string {
   );
 }
 
-// ── Epic Tier ──
+// ── Epic Tier — Natural Wonders ──
 
-function renderForbiddenCity(x: number, y: number, c: AssetColors): string {
+function renderAurora(x: number, y: number, c: AssetColors): string {
   return (
     `<g transform="translate(${x},${y})">` +
-    `<rect x="-5" y="-3" width="10" height="3" fill="${c.roofA}"/>` +
-    `<polygon points="-6,-3 0,-5.5 6,-3" fill="${c.roofA}"/>` +
-    `<polygon points="-5,-5.5 0,-7.5 5,-5.5" fill="${c.roofA}"/>` +
-    `<rect x="-4" y="-3" width="8" height="2.5" fill="${c.epicGold}" opacity="0.3"/>` +
-    `<line x1="-4" y1="-3" x2="-4" y2="0" stroke="${c.roofA}" stroke-width="0.5"/>` +
-    `<line x1="4" y1="-3" x2="4" y2="0" stroke="${c.roofA}" stroke-width="0.5"/>` +
-    `<circle cx="0" cy="-7.8" r="0.4" fill="${c.epicGold}"/>` +
+    // Shimmering aurora bands
+    `<path d="M-6,-3 Q-3,-9 0,-6 Q3,-10 6,-4" stroke="${c.epicJade}" stroke-width="1.2" fill="none" opacity="0.5" class="epic-glow-pulse"/>` +
+    `<path d="M-5,-4 Q-2,-10 1,-7 Q4,-11 6,-5" stroke="${c.epicPortal}" stroke-width="0.8" fill="none" opacity="0.4" class="epic-glow-pulse"/>` +
+    `<path d="M-6,-2 Q-3,-7 0,-5 Q3,-8 5,-3" stroke="${c.epicMagic}" stroke-width="0.6" fill="none" opacity="0.35"/>` +
+    // Subtle ground reference
+    `<ellipse cx="0" cy="0" rx="3" ry="0.8" fill="${c.epicJade}" opacity="0.15"/>` +
     `</g>`
   );
 }
+
+function renderGiantWaterfall(x: number, y: number, c: AssetColors): string {
+  return (
+    `<g transform="translate(${x},${y})">` +
+    // Cliff face
+    `<rect x="-5" y="-10" width="4" height="10" fill="${c.boulder}"/>` +
+    `<rect x="1" y="-10" width="4" height="10" fill="${c.rock}"/>` +
+    // Waterfall stream
+    `<rect x="-1" y="-10" width="2" height="10" fill="${c.epicCrystal}" opacity="0.5"/>` +
+    `<rect x="-0.5" y="-10" width="1" height="10" fill="${c.epicCrystal}" opacity="0.3"/>` +
+    // Green top
+    `<ellipse cx="0" cy="-10.5" rx="5.5" ry="1.5" fill="${c.epicJade}"/>` +
+    // Mist at base
+    `<ellipse cx="0" cy="0.5" rx="3" ry="1" fill="${c.epicCrystal}" opacity="0.25"/>` +
+    `</g>`
+  );
+}
+
+function renderBambooGrove(x: number, y: number, c: AssetColors): string {
+  return (
+    `<g transform="translate(${x},${y})">` +
+    // Bamboo stalks
+    `<line x1="-3" y1="0" x2="-3" y2="-11" stroke="${c.epicJade}" stroke-width="0.6"/>` +
+    `<line x1="-1.5" y1="0" x2="-1.5" y2="-13" stroke="${c.epicJade}" stroke-width="0.5"/>` +
+    `<line x1="0" y1="0" x2="0" y2="-12" stroke="${c.epicJade}" stroke-width="0.6"/>` +
+    `<line x1="1.5" y1="0" x2="1.5" y2="-11.5" stroke="${c.epicJade}" stroke-width="0.5"/>` +
+    `<line x1="3" y1="0" x2="3" y2="-10" stroke="${c.epicJade}" stroke-width="0.6"/>` +
+    // Nodes
+    `<line x1="-3.3" y1="-4" x2="-2.7" y2="-4" stroke="${c.leaf}" stroke-width="0.3"/>` +
+    `<line x1="-1.8" y1="-6" x2="-1.2" y2="-6" stroke="${c.leaf}" stroke-width="0.3"/>` +
+    `<line x1="-0.3" y1="-5" x2="0.3" y2="-5" stroke="${c.leaf}" stroke-width="0.3"/>` +
+    // Leaves
+    `<path d="M-3,-8 Q-4.5,-7.5 -5,-7" stroke="${c.leaf}" stroke-width="0.3" fill="none"/>` +
+    `<path d="M0,-9 Q1.5,-8.5 2.5,-8" stroke="${c.leaf}" stroke-width="0.3" fill="none"/>` +
+    `<path d="M-1.5,-10 Q-3,-9.5 -4,-9" stroke="${c.leaf}" stroke-width="0.3" fill="none"/>` +
+    `</g>`
+  );
+}
+
+function renderGlacierPeak(x: number, y: number, c: AssetColors): string {
+  return (
+    `<g transform="translate(${x},${y})">` +
+    // Icy mountain
+    `<polygon points="-5,0 -1,-10 1,-10 5,0" fill="${c.ice}"/>` +
+    `<polygon points="-1,-10 1,-10 5,0 0,0" fill="${c.snowGround}" opacity="0.6"/>` +
+    // Jagged ice peaks
+    `<polygon points="-1,-10 0,-13 1,-10" fill="${c.snowCap}"/>` +
+    `<polygon points="-3,-6 -2,-9 -1,-6" fill="${c.icicle}" opacity="0.5"/>` +
+    `<polygon points="2,-5 3,-8 4,-5" fill="${c.icicle}" opacity="0.4"/>` +
+    // Crevasse detail
+    `<line x1="-2" y1="-3" x2="-1" y2="-5" stroke="${c.epicCrystal}" stroke-width="0.3" opacity="0.5"/>` +
+    `</g>`
+  );
+}
+
+function renderBioluminescentPool(x: number, y: number, c: AssetColors): string {
+  return (
+    `<g transform="translate(${x},${y})">` +
+    // Dark rocky rim
+    `<ellipse cx="0" cy="0" rx="5" ry="2" fill="${c.boulder}"/>` +
+    // Glowing pool
+    `<ellipse cx="0" cy="-0.3" rx="4" ry="1.5" fill="${c.epicPortal}" opacity="0.4" class="epic-glow-pulse"/>` +
+    `<ellipse cx="0" cy="-0.5" rx="2.5" ry="0.9" fill="${c.epicPortal}" opacity="0.3" class="epic-glow-pulse"/>` +
+    // Glowing specks
+    `<circle cx="-1.5" cy="-0.3" r="0.3" fill="${c.epicPortal}" opacity="0.6" class="epic-glow-pulse"/>` +
+    `<circle cx="1.2" cy="-0.5" r="0.25" fill="${c.epicCrystal}" opacity="0.5" class="epic-glow-pulse"/>` +
+    `<circle cx="0" cy="0.2" r="0.2" fill="${c.epicPortal}" opacity="0.4"/>` +
+    `</g>`
+  );
+}
+
+function renderMeteorCrater(x: number, y: number, c: AssetColors): string {
+  return (
+    `<g transform="translate(${x},${y})">` +
+    // Outer rim
+    `<ellipse cx="0" cy="0" rx="5" ry="2.5" fill="${c.rock}"/>` +
+    // Inner crater
+    `<ellipse cx="0" cy="-0.3" rx="3.5" ry="1.5" fill="${c.boulder}" opacity="0.7"/>` +
+    `<ellipse cx="0" cy="-0.2" rx="2" ry="0.8" fill="${c.shadow}" opacity="0.5"/>` +
+    // Scattered debris
+    `<circle cx="-4" cy="-1" r="0.4" fill="${c.rock}" opacity="0.6"/>` +
+    `<circle cx="3.5" cy="0.5" r="0.5" fill="${c.rock}" opacity="0.5"/>` +
+    `<circle cx="-2.5" cy="1" r="0.3" fill="${c.boulder}" opacity="0.4"/>` +
+    // Faint glow at center
+    `<circle cx="0" cy="-0.2" r="0.8" fill="${c.epicGold}" opacity="0.2"/>` +
+    `</g>`
+  );
+}
+
+// ── Epic Tier — Landmarks ──
 
 function renderTajMahal(x: number, y: number, c: AssetColors): string {
   return (
@@ -459,18 +580,6 @@ function renderTajMahal(x: number, y: number, c: AssetColors): string {
     `<line x1="5" y1="0" x2="5" y2="-8" stroke="${c.epicMarble}" stroke-width="0.4"/>` +
     `<circle cx="-5" cy="-8.3" r="0.3" fill="${c.epicGold}"/>` +
     `<circle cx="5" cy="-8.3" r="0.3" fill="${c.epicGold}"/>` +
-    `</g>`
-  );
-}
-
-function renderNotreDame(x: number, y: number, c: AssetColors): string {
-  return (
-    `<g transform="translate(${x},${y})">` +
-    `<rect x="-4" y="-6" width="8" height="6" fill="${c.epicMarble}"/>` +
-    `<rect x="-4.5" y="-10" width="2.5" height="4.5" fill="${c.epicMarble}"/>` +
-    `<rect x="2" y="-10" width="2.5" height="4.5" fill="${c.epicMarble}"/>` +
-    `<circle cx="0" cy="-5" r="1.5" fill="${c.epicMagic}" opacity="0.5"/>` +
-    `<polygon points="-1.5,-6 0,-9 1.5,-6" fill="${c.epicMarble}"/>` +
     `</g>`
   );
 }
@@ -491,19 +600,6 @@ function renderStBasils(x: number, y: number, c: AssetColors): string {
   );
 }
 
-function renderColossusLighthouse(x: number, y: number, c: AssetColors): string {
-  return (
-    `<g transform="translate(${x},${y})">` +
-    `<rect x="-1.5" y="-8" width="3" height="8" fill="${c.epicMarble}"/>` +
-    `<circle cx="0" cy="-9" r="1.2" fill="${c.epicMarble}"/>` +
-    `<line x1="1.5" y1="-6" x2="4" y2="-8" stroke="${c.epicMarble}" stroke-width="0.5"/>` +
-    `<circle cx="4.2" cy="-8.5" r="0.6" fill="${c.epicGold}" opacity="0.8"/>` +
-    `<line x1="-1.5" y1="-6" x2="-3" y2="-4" stroke="${c.epicMarble}" stroke-width="0.5"/>` +
-    `<rect x="-2.5" y="-1" width="5" height="1" fill="${c.rock}"/>` +
-    `</g>`
-  );
-}
-
 function renderOperaHouse(x: number, y: number, c: AssetColors): string {
   return (
     `<g transform="translate(${x},${y})">` +
@@ -511,49 +607,6 @@ function renderOperaHouse(x: number, y: number, c: AssetColors): string {
     `<path d="M-4,-1 Q-2,-7 0,-1" fill="${c.epicMarble}"/>` +
     `<path d="M-1,-1 Q1,-8 3,-1" fill="${c.epicMarble}"/>` +
     `<path d="M2,-1 Q4,-6 5,-1" fill="${c.epicMarble}"/>` +
-    `</g>`
-  );
-}
-
-function renderSkyscraper(x: number, y: number, c: AssetColors): string {
-  return (
-    `<g transform="translate(${x},${y})">` +
-    `<rect x="-2" y="-12" width="4" height="12" fill="${c.rock}"/>` +
-    `<rect x="-2.5" y="-2" width="5" height="2" fill="${c.boulder}"/>` +
-    `<line x1="0" y1="-12" x2="0" y2="-14" stroke="${c.boulder}" stroke-width="0.3"/>` +
-    `<rect x="-1.2" y="-10" width="0.6" height="0.6" fill="${c.epicCrystal}" opacity="0.5"/>` +
-    `<rect x="0.6" y="-10" width="0.6" height="0.6" fill="${c.epicCrystal}" opacity="0.5"/>` +
-    `<rect x="-1.2" y="-8" width="0.6" height="0.6" fill="${c.epicCrystal}" opacity="0.5"/>` +
-    `<rect x="0.6" y="-8" width="0.6" height="0.6" fill="${c.epicCrystal}" opacity="0.5"/>` +
-    `<rect x="-1.2" y="-6" width="0.6" height="0.6" fill="${c.epicCrystal}" opacity="0.5"/>` +
-    `<rect x="0.6" y="-6" width="0.6" height="0.6" fill="${c.epicCrystal}" opacity="0.5"/>` +
-    `</g>`
-  );
-}
-
-function renderEnchantedForge(x: number, y: number, c: AssetColors): string {
-  return (
-    `<g transform="translate(${x},${y})">` +
-    `<rect x="-3" y="-4" width="6" height="4" fill="${c.blacksmith}"/>` +
-    `<polygon points="-3.5,-4 0,-6 3.5,-4" fill="${c.boulder}"/>` +
-    `<rect x="-1" y="-3" width="2" height="3" fill="${c.blacksmith}" opacity="0.8"/>` +
-    `<rect x="-0.5" y="-2.5" width="1" height="1" fill="${c.epicMagic}" opacity="0.6"/>` +
-    `<circle cx="2" cy="-5.5" r="0.5" fill="${c.epicMagic}" opacity="0.7"/>` +
-    `<circle cx="2.5" cy="-6.5" r="0.3" fill="${c.epicMagic}" opacity="0.5"/>` +
-    `</g>`
-  );
-}
-
-function renderAncientRuins(x: number, y: number, c: AssetColors): string {
-  return (
-    `<g transform="translate(${x},${y})">` +
-    `<line x1="-4" y1="0" x2="-4" y2="-6" stroke="${c.epicMarble}" stroke-width="0.8"/>` +
-    `<line x1="-1" y1="0" x2="-1" y2="-8" stroke="${c.epicMarble}" stroke-width="0.8"/>` +
-    `<line x1="2" y1="0" x2="2" y2="-4" stroke="${c.epicMarble}" stroke-width="0.8"/>` +
-    `<rect x="-1.8" y="-8.5" width="1.6" height="0.8" fill="${c.epicMarble}"/>` +
-    `<rect x="-5" y="-0.5" width="3" height="0.5" fill="${c.rock}" opacity="0.5"/>` +
-    `<circle cx="3.5" cy="-0.5" r="0.6" fill="${c.moss}" opacity="0.6"/>` +
-    `<circle cx="-3" cy="-3" r="0.4" fill="${c.moss}" opacity="0.5"/>` +
     `</g>`
   );
 }
@@ -625,16 +678,22 @@ function renderWorldTree(x: number, y: number, c: AssetColors): string {
   );
 }
 
-function renderSkyTemple(x: number, y: number, c: AssetColors): string {
+function renderSakuraEternal(x: number, y: number, c: AssetColors): string {
   return (
     `<g transform="translate(${x},${y})">` +
-    `<ellipse cx="0" cy="0" rx="5" ry="1.5" fill="${c.epicMarble}" opacity="0.3"/>` +
-    `<rect x="-3.5" y="-3" width="7" height="3" fill="${c.epicMarble}"/>` +
-    `<polygon points="-4,-3 0,-6 4,-3" fill="${c.epicGold}"/>` +
-    `<line x1="-3" y1="-3" x2="-3" y2="0" stroke="${c.epicMarble}" stroke-width="0.6"/>` +
-    `<line x1="0" y1="-3" x2="0" y2="0" stroke="${c.epicMarble}" stroke-width="0.6"/>` +
-    `<line x1="3" y1="-3" x2="3" y2="0" stroke="${c.epicMarble}" stroke-width="0.6"/>` +
-    `<circle cx="0" cy="-5" r="0.5" fill="${c.epicPortal}" opacity="0.6"/>` +
+    // Ancient trunk
+    `<path d="M0,0 Q-1,-3 -0.5,-5" stroke="${c.trunk}" stroke-width="1.5" fill="none"/>` +
+    `<path d="M-0.5,-5 Q-2,-6 -3,-7" stroke="${c.trunk}" stroke-width="0.8" fill="none"/>` +
+    `<path d="M-0.5,-5 Q1,-6 2,-7" stroke="${c.trunk}" stroke-width="0.8" fill="none"/>` +
+    // Massive blossom canopy
+    `<ellipse cx="0" cy="-9" rx="5" ry="3.5" fill="${c.cherryPetalPink}"/>` +
+    `<ellipse cx="-2" cy="-10.5" rx="3" ry="2" fill="${c.cherryPetalPink}" opacity="0.8"/>` +
+    `<ellipse cx="2" cy="-10.5" rx="3" ry="2" fill="${c.cherryPetalWhite}" opacity="0.7"/>` +
+    `<ellipse cx="0" cy="-12" rx="2" ry="1.5" fill="${c.cherryPetalPink}" opacity="0.6"/>` +
+    // Falling petals
+    `<circle cx="-4" cy="-5" r="0.3" fill="${c.cherryPetalPink}" opacity="0.6" class="epic-glow-pulse"/>` +
+    `<circle cx="3" cy="-4" r="0.25" fill="${c.cherryPetalWhite}" opacity="0.5" class="epic-glow-pulse"/>` +
+    `<circle cx="-2" cy="-3" r="0.2" fill="${c.cherryPetalPink}" opacity="0.4" class="epic-glow-pulse"/>` +
     `</g>`
   );
 }
@@ -654,38 +713,40 @@ function renderAncientPortal(x: number, y: number, c: AssetColors): string {
 // ── Renderer Map ───────────────────────────────────────────
 
 const EPIC_RENDERERS: Record<EpicBuildingType, EpicRenderer> = {
-  // Rare
-  pyramid: renderPyramid,
-  colosseum: renderColosseum,
-  parthenon: renderParthenon,
-  sphinx: renderSphinx,
-  pagoda: renderPagoda,
-  torii: renderTorii,
-  greatWall: renderGreatWall,
-  templeOfHeaven: renderTempleOfHeaven,
-  eiffelTower: renderEiffelTower,
-  bigBen: renderBigBen,
-  windmillGrand: renderWindmillGrand,
-  observatory: renderObservatory,
+  // Rare — Natural
+  mountFuji: renderMountFuji,
+  giantSequoia: renderGiantSequoia,
+  coralReef: renderCoralReef,
+  geyser: renderGeyser,
+  hotSpring: renderHotSpring,
+  grandCanyon: renderGrandCanyon,
+  oasis: renderOasis,
   volcano: renderVolcano,
   giantMushroom: renderGiantMushroom,
-  // Epic
-  forbiddenCity: renderForbiddenCity,
-  tajMahal: renderTajMahal,
-  notreDame: renderNotreDame,
-  stBasils: renderStBasils,
-  colossusLighthouse: renderColossusLighthouse,
-  operaHouse: renderOperaHouse,
-  skyscraper: renderSkyscraper,
-  enchantedForge: renderEnchantedForge,
-  ancientRuins: renderAncientRuins,
+  // Rare — Landmarks
+  colosseum: renderColosseum,
+  pagoda: renderPagoda,
+  torii: renderTorii,
+  eiffelTower: renderEiffelTower,
+  windmillGrand: renderWindmillGrand,
+  // Epic — Natural
+  aurora: renderAurora,
+  giantWaterfall: renderGiantWaterfall,
+  bambooGrove: renderBambooGrove,
+  glacierPeak: renderGlacierPeak,
+  bioluminescentPool: renderBioluminescentPool,
+  meteorCrater: renderMeteorCrater,
   bonsaiGiant: renderBonsaiGiant,
+  // Epic — Landmarks
+  tajMahal: renderTajMahal,
+  stBasils: renderStBasils,
+  operaHouse: renderOperaHouse,
   // Legendary
   floatingIsland: renderFloatingIsland,
   crystalSpire: renderCrystalSpire,
   dragonNest: renderDragonNest,
   worldTree: renderWorldTree,
-  skyTemple: renderSkyTemple,
+  sakuraEternal: renderSakuraEternal,
   ancientPortal: renderAncientPortal,
 };
 
