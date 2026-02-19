@@ -641,7 +641,7 @@ function blendWithBiome(pool: AssetPool, ctx: BiomeContext, level: number): Asse
 
 // ── Neighbor Richness ───────────────────────────────────────
 
-function computeRichness(cell: IsoCell, cellMap: Map<string, IsoCell>): number {
+export function computeRichness(cell: IsoCell, cellMap: Map<string, IsoCell>): number {
   let neighborSum = 0;
   let count = 0;
   for (let dw = -1; dw <= 1; dw++) {
@@ -690,6 +690,7 @@ export function selectAssets(
   biomeMap?: Map<string, BiomeContext>,
   seasonRotation?: number,
   density: number = 5,
+  excludeCells?: Set<string>,
 ): PlacedAsset[] {
   const rng = seededRandom(seed);
   const variantRng = seededRandom(variantSeed ?? seed);
@@ -703,6 +704,7 @@ export function selectAssets(
   }
 
   for (const cell of isoCells) {
+    if (excludeCells?.has(`${cell.week},${cell.day}`)) continue;
     const effectiveLevel = getEffectiveLevel(cell.level100, density);
     let pool = getLevelPool100(effectiveLevel);
     const biomeCtx = biomeMap?.get(`${cell.week},${cell.day}`);
@@ -5983,8 +5985,17 @@ export function renderSeasonalTerrainAssets(
   biomeMap?: Map<string, BiomeContext>,
   seasonRotation?: number,
   density: number = 5,
+  excludeCells?: Set<string>,
 ): string {
-  const placed = selectAssets(isoCells, seed, variantSeed, biomeMap, seasonRotation, density);
+  const placed = selectAssets(
+    isoCells,
+    seed,
+    variantSeed,
+    biomeMap,
+    seasonRotation,
+    density,
+    excludeCells,
+  );
 
   const svgParts = placed.map((a) => {
     // Use per-week palette for this cell's week

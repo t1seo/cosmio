@@ -277,6 +277,13 @@ export interface AssetColors {
   bushDark: string;
   leafLight: string;
   flowerAlt: string;
+  // ── Epic Building Colors ──────────────────────────────
+  epicGold: string;
+  epicMarble: string;
+  epicJade: string;
+  epicCrystal: string;
+  epicMagic: string;
+  epicPortal: string;
 }
 
 /** A color anchor point for interpolation */
@@ -675,6 +682,13 @@ const DARK_ASSETS: AssetColors = {
   bushDark: '#2d5a3d',
   leafLight: '#6db86d',
   flowerAlt: '#e8a0c0',
+  // Epic building colors
+  epicGold: '#ffd700',
+  epicMarble: '#d8d0c0',
+  epicJade: '#2e8b57',
+  epicCrystal: '#7fdbff',
+  epicMagic: '#9b59b6',
+  epicPortal: '#00ced1',
 };
 
 const LIGHT_ASSETS: AssetColors = {
@@ -930,6 +944,13 @@ const LIGHT_ASSETS: AssetColors = {
   bushDark: '#3d6a4d',
   leafLight: '#8dd88d',
   flowerAlt: '#f8b0d0',
+  // Epic building colors
+  epicGold: '#ffe740',
+  epicMarble: '#f0e8d8',
+  epicJade: '#3aad6a',
+  epicCrystal: '#90e8ff',
+  epicMagic: '#b070d0',
+  epicPortal: '#20e8e0',
 };
 
 // ── Palette Factory ──────────────────────────────────────────

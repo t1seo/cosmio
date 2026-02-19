@@ -25,6 +25,12 @@ import {
   renderFallingLeaves,
 } from './effects.js';
 import { renderSeasonalTerrainAssets, renderAssetCSS } from './assets.js';
+import {
+  selectEpicBuildings,
+  renderEpicBuildings,
+  renderEpicGlowDefs,
+  renderEpicCSS,
+} from './epics.js';
 import { generateBiomeMap } from './biomes.js';
 import { hash } from '../../utils/math.js';
 import type { Hemisphere } from './seasons.js';
@@ -101,10 +107,20 @@ function renderMode(data: ContributionData, options: ThemeOptions, mode: ColorMo
   // Generate biome overlay (rivers, ponds, forests) with offset seed
   const biomeMap = generateBiomeMap(52, 7, seed + 7919);
 
+  // Select epic buildings (before regular assets so we can exclude their cells)
+  const epicSeed = hash(data.username + 'epic' + String(data.year));
+  const { placed: epicPlaced, epicCells } = selectEpicBuildings(
+    isoCells,
+    epicSeed,
+    data.stats,
+    biomeMap,
+  );
+
   // Build layers
   const terrainCSS = renderTerrainCSS(isoCells, biomeMap);
   const assetCSS = renderAssetCSS();
-  const css = terrainCSS + '\n' + assetCSS;
+  const epicCSS = renderEpicCSS();
+  const css = terrainCSS + '\n' + assetCSS + '\n' + epicCSS;
 
   const isDark = mode === 'dark';
   const celestials = renderCelestials(seed, palette, isDark);
@@ -123,7 +139,7 @@ function renderMode(data: ContributionData, options: ThemeOptions, mode: ColorMo
   const waterOverlays = renderWaterOverlays(isoCells, palette, biomeMap);
   const waterRipples = renderWaterRipples(isoCells, palette, biomeMap);
 
-  // Use seasonal terrain assets with per-week palettes
+  // Use seasonal terrain assets with per-week palettes (skip epic cells)
   const assets = renderSeasonalTerrainAssets(
     isoCells,
     seed,
@@ -132,7 +148,11 @@ function renderMode(data: ContributionData, options: ThemeOptions, mode: ColorMo
     biomeMap,
     seasonRotation,
     density,
+    epicCells,
   );
+
+  // Render epic buildings on top of regular assets
+  const epicBuildings = renderEpicBuildings(epicPlaced, weekPalettes);
 
   // Seasonal particle effects
   const snowParticles = renderSnowParticles(isoCells, seed, seasonRotation);
@@ -160,15 +180,20 @@ function renderMode(data: ContributionData, options: ThemeOptions, mode: ColorMo
   const title = renderTitle(options.title, themePalette);
   const statsBar = renderStatsBar(data.stats, themePalette);
 
+  // Epic glow gradient definitions
+  const epicDefs = epicPlaced.length > 0 ? `<defs>${renderEpicGlowDefs(mode)}</defs>` : '';
+
   // Assemble
   const content = [
     svgStyle(css),
+    epicDefs,
     celestials,
     clouds,
     blocks,
     waterOverlays,
     waterRipples,
     assets,
+    epicBuildings,
     snowParticles,
     fallingPetals,
     fallingLeaves,
