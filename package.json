@@ -1,6 +1,6 @@
 {
   "name": "maeul-in-the-sky",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "Transform GitHub contributions into animated terrain SVGs",
   "type": "module",
   "bin": {

@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-02-19
+
 ### Added
 
 - **Epic Wonders** — 30 Civilization-style rare landmarks (14 Rare, 10 Epic, 6 Legendary) that appear on high-activity cells. 70% natural wonders (Mount Fuji, giant sequoia, coral reef, aurora, glacier peak, etc.) and 30% iconic structures (Colosseum, Taj Mahal, Eiffel Tower, etc.). Uses a 3-gate system (cell level, neighborhood richness, global stats) with anti-clustering and budget caps. Includes gold/purple/cyan glow effects and animated wonders (windmill, world tree, ancient portal).
@@ -83,6 +85,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Water system** — two-tone water overlays, ripple lines, river shimmer animations
 - **Contribution statistics** — streak calculation, day-of-week analysis
 
+[1.4.0]: https://github.com/t1seo/maeul-in-the-sky/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/t1seo/maeul-in-the-sky/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/t1seo/maeul-in-the-sky/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/t1seo/maeul-in-the-sky/compare/v1.0.1...v1.1.0
