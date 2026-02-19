@@ -1,7 +1,7 @@
 import type { IsoCell } from './blocks.js';
 import type { TerrainPalette100, AssetColors } from './palette.js';
 import type { BiomeContext } from './biomes.js';
-import { seededRandom } from '../../utils/math.js';
+import { seededRandom, clamp } from '../../utils/math.js';
 import { getSeasonalPoolOverrides } from './seasons.js';
 
 // ── Asset Type Definitions (38 total) ───────────────────────
@@ -225,6 +225,19 @@ interface PlacedAsset {
 interface AssetPool {
   types: AssetType[];
   chance: number;
+}
+
+/**
+ * Apply density offset to a level for asset pool selection.
+ * density=5 is neutral (no change), density=10 shifts +25, density=1 shifts -20.
+ * Only affects which asset pool is selected, not terrain color/elevation.
+ *
+ * Level 0 (no activity) is always preserved — density never turns
+ * empty days into active ones, and active days never become level 0.
+ */
+export function getEffectiveLevel(level100: number, density: number): number {
+  if (level100 === 0) return 0;
+  return clamp(level100 + (density - 5) * 5, 1, 99);
 }
 
 function getLevelPool100(level: number): AssetPool {
@@ -676,6 +689,7 @@ export function selectAssets(
   variantSeed?: number,
   biomeMap?: Map<string, BiomeContext>,
   seasonRotation?: number,
+  density: number = 5,
 ): PlacedAsset[] {
   const rng = seededRandom(seed);
   const variantRng = seededRandom(variantSeed ?? seed);
@@ -689,13 +703,14 @@ export function selectAssets(
   }
 
   for (const cell of isoCells) {
-    let pool = getLevelPool100(cell.level100);
+    const effectiveLevel = getEffectiveLevel(cell.level100, density);
+    let pool = getLevelPool100(effectiveLevel);
     const biomeCtx = biomeMap?.get(`${cell.week},${cell.day}`);
-    if (biomeCtx) pool = blendWithBiome(pool, biomeCtx, cell.level100);
+    if (biomeCtx) pool = blendWithBiome(pool, biomeCtx, effectiveLevel);
 
     // Apply seasonal overrides if rotation is provided
     if (seasonRotation != null) {
-      const { add, remove } = getSeasonalPoolOverrides(cell.week, seasonRotation, cell.level100);
+      const { add, remove } = getSeasonalPoolOverrides(cell.week, seasonRotation, effectiveLevel);
       pool = {
         types: [...pool.types.filter((t) => !remove.has(t)), ...add] as AssetType[],
         chance: pool.chance,
@@ -5943,8 +5958,9 @@ export function renderTerrainAssets(
   palette: TerrainPalette100,
   variantSeed?: number,
   biomeMap?: Map<string, BiomeContext>,
+  density: number = 5,
 ): string {
-  const placed = selectAssets(isoCells, seed, variantSeed, biomeMap);
+  const placed = selectAssets(isoCells, seed, variantSeed, biomeMap, undefined, density);
   const c = palette.assets;
 
   const svgParts = placed.map((a) => {
@@ -5966,8 +5982,9 @@ export function renderSeasonalTerrainAssets(
   variantSeed?: number,
   biomeMap?: Map<string, BiomeContext>,
   seasonRotation?: number,
+  density: number = 5,
 ): string {
-  const placed = selectAssets(isoCells, seed, variantSeed, biomeMap, seasonRotation);
+  const placed = selectAssets(isoCells, seed, variantSeed, biomeMap, seasonRotation, density);
 
   const svgParts = placed.map((a) => {
     // Use per-week palette for this cell's week

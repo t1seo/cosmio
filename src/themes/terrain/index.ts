@@ -67,6 +67,7 @@ const terrainTheme: Theme = {
  */
 function renderMode(data: ContributionData, options: ThemeOptions, mode: ColorMode): string {
   const hemisphere: Hemisphere = options.hemisphere || 'north';
+  const density = options.density ?? 5;
   const oldestDate = new Date(data.weeks[0]?.days[0]?.date || new Date());
   const seasonRotation = computeSeasonRotation(oldestDate, hemisphere);
   const seed = hash(data.username + mode);
@@ -130,6 +131,7 @@ function renderMode(data: ContributionData, options: ThemeOptions, mode: ColorMo
     variantSeed,
     biomeMap,
     seasonRotation,
+    density,
   );
 
   // Seasonal particle effects

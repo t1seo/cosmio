@@ -29,8 +29,10 @@ program
   .option('-y, --year <number>', 'Year to visualize (omit for rolling 52 weeks)')
   .option('--token <token>', 'GitHub personal access token (or use GITHUB_TOKEN env)')
   .option('--hemisphere <hemisphere>', 'Hemisphere for seasonal terrain (north or south)', 'north')
+  .option('--density <number>', 'Building density 1-10 (higher = buildings at lower activity)', '5')
   .action(async (opts) => {
     const hemisphere = opts.hemisphere === 'south' ? ('south' as const) : ('north' as const);
+    const density = Math.max(1, Math.min(10, parseInt(opts.density, 10) || 5));
     const options: CliOptions = {
       user: opts.user,
       theme: opts.theme,
@@ -39,6 +41,7 @@ program
       year: opts.year ? parseInt(opts.year, 10) : undefined,
       token: opts.token || process.env.GITHUB_TOKEN,
       hemisphere,
+      density,
     };
 
     // Validate theme exists
@@ -68,6 +71,7 @@ program
         width: 840,
         height: 240,
         hemisphere: options.hemisphere,
+        density: options.density,
       });
 
       // Write output files

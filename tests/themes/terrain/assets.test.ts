@@ -11,6 +11,7 @@ import {
   renderTerrainAssets,
   renderSeasonalTerrainAssets,
   renderAssetCSS,
+  getEffectiveLevel,
 } from '../../../src/themes/terrain/assets.js';
 import type { ContributionData } from '../../../src/core/types.js';
 
@@ -488,6 +489,108 @@ describe('renderAssetCSS', () => {
     expect(css).toContain('0%');
     expect(css).toContain('50%');
     expect(css).toContain('100%');
+  });
+});
+
+// ── getEffectiveLevel ────────────────────────────────────────
+
+describe('getEffectiveLevel', () => {
+  it('density=5 returns the original level (neutral)', () => {
+    expect(getEffectiveLevel(50, 5)).toBe(50);
+    expect(getEffectiveLevel(0, 5)).toBe(0);
+    expect(getEffectiveLevel(99, 5)).toBe(99);
+  });
+
+  it('density=10 adds +25 offset', () => {
+    expect(getEffectiveLevel(50, 10)).toBe(75);
+    expect(getEffectiveLevel(54, 10)).toBe(79); // crosses into village range
+  });
+
+  it('density=1 subtracts -20 offset', () => {
+    expect(getEffectiveLevel(50, 1)).toBe(30);
+    expect(getEffectiveLevel(99, 1)).toBe(79); // only raw 99 reaches village
+  });
+
+  it('preserves level 0 (no activity) regardless of density', () => {
+    expect(getEffectiveLevel(0, 1)).toBe(0);
+    expect(getEffectiveLevel(0, 5)).toBe(0);
+    expect(getEffectiveLevel(0, 10)).toBe(0); // no commits → always 0
+  });
+
+  it('active days clamp to 1, never 0', () => {
+    expect(getEffectiveLevel(10, 1)).toBe(1); // 10 + (-20) = -10 → clamped to 1
+    expect(getEffectiveLevel(1, 1)).toBe(1); // 1 + (-20) = -19 → clamped to 1
+  });
+
+  it('clamps to 99 at the high end', () => {
+    expect(getEffectiveLevel(99, 10)).toBe(99); // 99 + 25 = 124 → 99
+    expect(getEffectiveLevel(80, 10)).toBe(99); // 80 + 25 = 105 → 99
+  });
+
+  it('handles mid-range density values', () => {
+    expect(getEffectiveLevel(50, 7)).toBe(60); // +10
+    expect(getEffectiveLevel(50, 3)).toBe(40); // -10
+  });
+});
+
+// ── density integration ─────────────────────────────────────
+
+describe('density parameter integration', () => {
+  const BUILDING_TYPES = new Set([
+    'tent',
+    'hut',
+    'house',
+    'houseB',
+    'church',
+    'windmill',
+    'well',
+    'tavern',
+    'bakery',
+    'stable',
+    'castle',
+    'tower',
+    'market',
+    'inn',
+    'blacksmith',
+    'cathedral',
+    'library',
+    'clocktower',
+    'manor',
+    'gatehouse',
+    'fountain',
+  ]);
+
+  it('density=10 produces more building assets than density=1', () => {
+    const highDensity = selectAssets(isoCells, 42, undefined, biomeMap, 0, 10);
+    const lowDensity = selectAssets(isoCells, 42, undefined, biomeMap, 0, 1);
+
+    const highBuildings = highDensity.filter((a) => BUILDING_TYPES.has(a.type)).length;
+    const lowBuildings = lowDensity.filter((a) => BUILDING_TYPES.has(a.type)).length;
+
+    expect(highBuildings).toBeGreaterThan(lowBuildings);
+  });
+
+  it('density=5 (default) matches selectAssets without density param', () => {
+    const withDefault = selectAssets(isoCells, 42, undefined, biomeMap, 0, 5);
+    const withoutParam = selectAssets(isoCells, 42, undefined, biomeMap, 0);
+
+    expect(withDefault.length).toBe(withoutParam.length);
+    for (let i = 0; i < withDefault.length; i++) {
+      expect(withDefault[i].type).toBe(withoutParam[i].type);
+    }
+  });
+
+  it('renderSeasonalTerrainAssets accepts density parameter', () => {
+    const palettes = Array.from({ length: 52 }, (_, w) => getSeasonalPalette100('dark', w, 0));
+    const svg = renderSeasonalTerrainAssets(isoCells, 42, palettes, undefined, biomeMap, 0, 10);
+    expect(svg).toContain('<g class="terrain-assets">');
+    expect(svg.length).toBeGreaterThan(50);
+  });
+
+  it('renderTerrainAssets accepts density parameter', () => {
+    const svg = renderTerrainAssets(isoCells, 42, palette, undefined, biomeMap, 10);
+    expect(svg).toContain('<g class="terrain-assets">');
+    expect(svg.length).toBeGreaterThan(50);
   });
 });
 

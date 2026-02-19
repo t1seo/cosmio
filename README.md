@@ -95,6 +95,7 @@ Then add this to your profile README:
 | `output_dir` | Output directory | `./` |
 | `year` | Target year | Current year |
 | `hemisphere` | Seasonal mapping (`north` or `south`) | `north` |
+| `density` | Building density 1-10 (higher = buildings at lower activity) | `5` |
 
 ### Customization Examples
 
@@ -116,6 +117,12 @@ Then add this to your profile README:
   with:
     github_token: ${{ secrets.GITHUB_TOKEN }}
     year: 2025
+
+# More buildings even with moderate activity
+- uses: t1seo/maeul-in-the-sky@v1
+  with:
+    github_token: ${{ secrets.GITHUB_TOKEN }}
+    density: 8
 ```
 
 ## How Does the Terrain Work?
@@ -139,6 +146,28 @@ Each square on your GitHub contribution graph becomes a terrain block. The more 
 - **Commit more on a given day** → That day's land upgrades from grass to forest to buildings
 
 A consistent contributor who codes daily will have a lush island full of villages. A burst contributor who codes intensely a few days a week will have scattered but tall cities rising from the sea.
+
+### What does `density` do?
+
+Your terrain levels are calculated **relative to your own activity** — your busiest days become the peak, and everything else scales accordingly. This means buildings (villages, towns, cities) appear on your most active days, but "average" days tend to stay in the forest or farm range.
+
+This is especially noticeable if your commit pattern is uneven. For example, if your busiest day has 10 commits but you usually do 1-2, those normal days only reach the forest level (~30-45 out of 99) — buildings start at level 79. The `density` setting shifts this threshold lower so your everyday commits can produce villages too.
+
+> **Think of it as a "civilization boost."** It doesn't change your terrain's elevation or colors — only which assets (trees vs. houses vs. towers) appear on each block.
+
+**Recommended settings:**
+
+| Your commit pattern | Recommended `density` | Why |
+|:---|:---:|:---|
+| Consistent daily commits | `5` (default) | Most days are already near your peak, so buildings appear naturally |
+| Daily commits, but occasional burst days | `6`–`7` | Burst days push the baseline up — this helps normal days show buildings too |
+| A few days per week, similar volume each day | `7`–`8` | Active days are high-level but sparse; boost helps them reach village range |
+| Sporadic bursts with long gaps | `8`–`9` | Big gap between peak and average days; a higher boost bridges it |
+| Just getting started or very occasional | `9`–`10` | Maximizes buildings so even light activity feels rewarding |
+
+Setting `density` to `1`–`4` does the opposite — it raises the bar, making buildings rarer. Use this if your terrain feels too urban and you want more nature.
+
+> **Why this exists:** Maeul in the Sky is about making your contribution graph delightful. Seeing your terrain grow from forests into a thriving village can motivate you to keep coding every day — and `density` makes sure that feeling is accessible to everyone, not just those with perfectly even commit patterns.
 
 ## License
 

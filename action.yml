@@ -26,6 +26,10 @@ inputs:
     description: 'Hemisphere for seasonal terrain (north or south)'
     required: false
     default: 'north'
+  density:
+    description: 'Building density 1-10 (higher = buildings appear at lower activity levels)'
+    required: false
+    default: '5'
 outputs:
   dark_svg_path:
     description: 'Path to the generated dark mode SVG'

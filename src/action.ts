@@ -26,6 +26,8 @@ async function run(): Promise<void> {
     const yearInput = core.getInput('year');
     const hemisphereInput = core.getInput('hemisphere') || 'north';
     const hemisphere = hemisphereInput === 'south' ? ('south' as const) : ('north' as const);
+    const densityInput = core.getInput('density');
+    const density = densityInput ? Math.max(1, Math.min(10, parseInt(densityInput, 10) || 5)) : 5;
 
     // Determine username from GITHUB_ACTOR
     const username = process.env.GITHUB_ACTOR;
@@ -65,6 +67,7 @@ async function run(): Promise<void> {
       width: 840,
       height: 240,
       hemisphere,
+      density,
     });
 
     // Write output files
