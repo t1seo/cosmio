@@ -4,7 +4,7 @@
   "description": "Transform GitHub contributions into animated terrain SVGs",
   "type": "module",
   "bin": {
-    "maeul-sky": "./dist/index.js"
+    "maeul-sky": "dist/index.js"
   },
   "main": "./dist/lib.cjs",
   "module": "./dist/lib.js",
@@ -49,7 +49,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/t1seo/github-profile-maeul.git"
+    "url": "git+https://github.com/t1seo/github-profile-maeul.git"
   },
   "homepage": "https://github.com/t1seo/github-profile-maeul",
   "bugs": {
