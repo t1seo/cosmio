@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **npm package published** — `maeul-in-the-sky` is now available on [npm](https://www.npmjs.com/package/maeul-in-the-sky)
+- **npm badges** — version and download count badges added to all READMEs (EN, KO, JA, ZH)
+- **CD workflow** — automatic npm publish via GitHub Actions on tag push (`v*`)
+
+### Fixed
+
+- **npm publish warnings** — corrected bin path and repository URL format in package.json
+
 ## [1.4.0] - 2026-02-19
 
 ### Added
