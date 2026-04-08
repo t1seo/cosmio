@@ -46,6 +46,8 @@ interface ThemeOptions {
     height: number;
     /** Hemisphere for seasonal terrain (default: 'north') */
     hemisphere?: 'north' | 'south';
+    /** Building density 1-10 (default: 5, higher = buildings at lower activity) */
+    density?: number;
 }
 /** Rendered SVG output for both color modes */
 interface ThemeOutput {

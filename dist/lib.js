@@ -87,9 +87,9 @@ async function makeGraphQLRequest(query, variables, token) {
       }
       if (isLastAttempt) {
         if (error instanceof Error) {
-          throw new Error(`Network failure: ${error.message}`);
+          throw new Error(`Network failure: ${error.message}`, { cause: error });
         }
-        throw new Error(`Network failure: ${String(error)}`);
+        throw new Error(`Network failure: ${String(error)}`, { cause: error });
       }
       await sleep(delays[attempt]);
     }
@@ -112,11 +112,7 @@ async function fetchContributions(username, year, token) {
     to = now.toISOString();
     effectiveYear = now.getFullYear();
   }
-  const response = await makeGraphQLRequest(
-    CONTRIBUTIONS_QUERY,
-    { username, from, to },
-    token
-  );
+  const response = await makeGraphQLRequest(CONTRIBUTIONS_QUERY, { username, from, to }, token);
   const calendar = response.data.user.contributionsCollection.contributionCalendar;
   const weeks = calendar.weeks.map((week) => {
     const days = week.contributionDays.map((day) => ({
@@ -327,22 +323,22 @@ function escapeXml(str) {
 
 // src/themes/terrain/seasons.ts
 var ZONE_BOUNDS = [
-  { zone: 0, start: 0, end: 6 },
-  // Winter
-  { zone: 1, start: 7, end: 12 },
-  // Winter -> Spring
-  { zone: 2, start: 13, end: 19 },
-  // Spring
-  { zone: 3, start: 20, end: 25 },
-  // Spring -> Summer
-  { zone: 4, start: 26, end: 32 },
-  // Summer (base)
-  { zone: 5, start: 33, end: 38 },
-  // Summer -> Autumn
-  { zone: 6, start: 39, end: 45 },
-  // Autumn
+  { zone: 0, start: 0, end: 4 },
+  // Winter peak
+  { zone: 1, start: 5, end: 13 },
+  // Winter -> Spring (longer transition)
+  { zone: 2, start: 14, end: 18 },
+  // Spring peak
+  { zone: 3, start: 19, end: 27 },
+  // Spring -> Summer (longer transition)
+  { zone: 4, start: 28, end: 32 },
+  // Summer peak
+  { zone: 5, start: 33, end: 40 },
+  // Summer -> Autumn (longer transition)
+  { zone: 6, start: 41, end: 45 },
+  // Autumn peak
   { zone: 7, start: 46, end: 51 }
-  // Autumn -> Winter
+  // Autumn -> Winter (longer transition)
 ];
 function computeSeasonRotation(oldestWeekDate, hemisphere = "north") {
   const year = oldestWeekDate.getFullYear();
@@ -426,13 +422,16 @@ var SEASON_TINTS = {
     saturation: 1
   },
   autumn: {
-    colorShift: 0.1,
-    colorTarget: [210, 140, 60],
-    // warm amber
-    greenMul: 0.7,
-    warmth: 20,
+    colorShift: 0.12,
+    colorTarget: [210, 170, 60],
+    // golden-yellow with hint of orange
+    greenMul: 0.65,
+    // some green remains (late summer trees)
+    warmth: 15,
+    // moderate warmth (yellow-orange, not red)
     snowCoverage: 0,
-    saturation: 1.05
+    saturation: 1.12
+    // vivid but natural
   }
 };
 function getSeasonalTint(week, rotation = 0) {
@@ -616,23 +615,96 @@ var SEASON_REMOVE = {
 var SEASON_ADD = {
   winter: {
     nature: ["snowPine", "snowDeciduous", "snowCoveredRock", "bareBush", "winterBird", "snowdrift"],
-    settlement: ["snowman", "igloo", "sled", "firewood", "icicle", "snowdrift"],
+    settlement: [
+      "snowman",
+      "igloo",
+      "sled",
+      "firewood",
+      "icicle",
+      "snowdrift",
+      "houseWinter",
+      "houseBWinter",
+      "barnWinter",
+      "churchWinter",
+      "christmasTree",
+      "winterLantern",
+      "frozenFountain"
+    ],
     general: ["snowdrift", "snowCoveredRock", "bareBush", "icicle"]
   },
   spring: {
-    nature: ["cherryBlossom", "cherryBlossomSmall", "tulip", "tulipField", "sprout", "crocus", "lamb"],
-    settlement: ["cherryBlossom", "tulipField", "nest", "birdhouse", "gardenBed", "rainPuddle", "cherryPetals"],
-    general: ["sprout", "crocus", "cherryPetals", "rainPuddle"]
+    nature: [
+      "cherryBlossom",
+      "cherryBlossomSmall",
+      "cherryBlossomFull",
+      "cherryBlossomBranch",
+      "peachBlossom",
+      "tulip",
+      "tulipField",
+      "sprout",
+      "crocus",
+      "lamb",
+      "robinBird"
+    ],
+    settlement: [
+      "cherryBlossom",
+      "cherryBlossomFull",
+      "tulipField",
+      "nest",
+      "birdhouse",
+      "gardenBed",
+      "rainPuddle",
+      "cherryPetals",
+      "flowerBed",
+      "wateringCan",
+      "umbrella",
+      "butterflyGarden"
+    ],
+    general: ["sprout", "crocus", "cherryPetals", "rainPuddle", "seedling"]
   },
   summer: {
     nature: ["sunflower", "fireflies", "watermelon"],
-    settlement: ["parasol", "beachTowel", "hammock", "iceCreamCart", "lemonade", "sprinkler", "swimmingPool"],
+    settlement: [
+      "parasol",
+      "beachTowel",
+      "hammock",
+      "iceCreamCart",
+      "lemonade",
+      "sprinkler",
+      "swimmingPool"
+    ],
     general: ["sunflower", "watermelon"]
   },
   autumn: {
-    nature: ["autumnMaple", "autumnOak", "autumnBirch", "autumnGinkgo", "fallenLeaves", "leafSwirl", "acorn"],
-    settlement: ["cornStalk", "scarecrowAutumn", "harvestBasket", "hotDrink", "autumnWreath", "fallenLeaves"],
-    general: ["fallenLeaves", "leafSwirl", "acorn"]
+    nature: [
+      "autumnMaple",
+      "autumnMaple",
+      "autumnOak",
+      "autumnOak",
+      "autumnBirch",
+      "autumnGinkgo",
+      "fallenLeaves",
+      "fallenLeaves",
+      "fallenLeaves",
+      "leafSwirl",
+      "leafSwirl",
+      "acorn",
+      "pumpkinPatch"
+    ],
+    settlement: [
+      "cornStalk",
+      "scarecrowAutumn",
+      "harvestBasket",
+      "hotDrink",
+      "autumnWreath",
+      "fallenLeaves",
+      "fallenLeaves",
+      "hayMaze",
+      "appleBasket",
+      "rake",
+      "autumnMaple"
+    ],
+    general: ["fallenLeaves", "fallenLeaves", "leafSwirl", "leafSwirl", "acorn", "pumpkinPatch"]
   }
 };
 function getSeasonalPoolOverrides(week, rotation = 0, level = 50) {
@@ -650,10 +722,7 @@ function getSeasonalPoolOverrides(week, rotation = 0, level = 50) {
   const toAdd = getLevelAdditions(SEASON_ADD[to], level);
   const fromCount = Math.round(fromAdd.length * (1 - t));
   const toCount = Math.round(toAdd.length * t);
-  const add = [
-    ...fromAdd.slice(0, fromCount),
-    ...toAdd.slice(0, toCount)
-  ];
+  const add = [...fromAdd.slice(0, fromCount), ...toAdd.slice(0, toCount)];
   return { add, remove };
 }
 function getLevelAdditions(additions, level) {
@@ -1011,7 +1080,46 @@ var DARK_ASSETS = {
   hotDrinkMug: "#c8a060",
   hotDrinkSteam: "#d0d8e0",
   wreathGreen: "#507038",
-  wreathBerry: "#c03030"
+  wreathBerry: "#c03030",
+  // Extended Seasonal: Autumn
+  autumnGold: "#d4a84b",
+  autumnBronze: "#b07830",
+  autumnBurgundy: "#8b2040",
+  autumnRust: "#c05530",
+  autumnOlive: "#8b8b40",
+  // Extended Seasonal: Spring
+  blossomPink: "#ffb6c1",
+  blossomWhite: "#fff0f5",
+  peachPink: "#ffd5cc",
+  // Extended Seasonal: Winter
+  icicleBlue: "#d0e8f8",
+  christmasRed: "#c41e3a",
+  christmasGold: "#ffd700",
+  christmasGreen: "#228b22",
+  // Fruit Trees
+  appleRed: "#c41e3a",
+  oliveGreen: "#808060",
+  oliveFruit: "#4a4a30",
+  lemonYellow: "#fff44f",
+  orangeFruit: "#ff8c00",
+  pearGreen: "#d1e231",
+  peachFruit: "#ffcba4",
+  // Additional Livestock
+  donkey: "#808080",
+  goat: "#e8e0d0",
+  goatHorn: "#b0a090",
+  // Enhanced asset detail colors
+  shadow: "#1a1a2e",
+  bushDark: "#2d5a3d",
+  leafLight: "#6db86d",
+  flowerAlt: "#e8a0c0",
+  // Epic building colors
+  epicGold: "#ffd700",
+  epicMarble: "#d8d0c0",
+  epicJade: "#2e8b57",
+  epicCrystal: "#7fdbff",
+  epicMagic: "#9b59b6",
+  epicPortal: "#00ced1"
 };
 var LIGHT_ASSETS = {
   trunk: "#7a5030",
@@ -1233,7 +1341,46 @@ var LIGHT_ASSETS = {
   hotDrinkMug: "#d8b070",
   hotDrinkSteam: "#e0e8f0",
   wreathGreen: "#608048",
-  wreathBerry: "#d04040"
+  wreathBerry: "#d04040",
+  // Extended Seasonal: Autumn
+  autumnGold: "#e0b85c",
+  autumnBronze: "#c08840",
+  autumnBurgundy: "#9b3050",
+  autumnRust: "#d06540",
+  autumnOlive: "#9b9b50",
+  // Extended Seasonal: Spring
+  blossomPink: "#ffc6d1",
+  blossomWhite: "#fff8fb",
+  peachPink: "#ffe5dc",
+  // Extended Seasonal: Winter
+  icicleBlue: "#e0f0ff",
+  christmasRed: "#d42e4a",
+  christmasGold: "#ffe720",
+  christmasGreen: "#32a032",
+  // Fruit Trees
+  appleRed: "#d42e4a",
+  oliveGreen: "#909070",
+  oliveFruit: "#5a5a40",
+  lemonYellow: "#ffff5f",
+  orangeFruit: "#ff9c10",
+  pearGreen: "#e1f241",
+  peachFruit: "#ffdbb4",
+  // Additional Livestock
+  donkey: "#909090",
+  goat: "#f0e8e0",
+  goatHorn: "#c0b0a0",
+  // Enhanced asset detail colors
+  shadow: "#4a4a5e",
+  bushDark: "#3d6a4d",
+  leafLight: "#8dd88d",
+  flowerAlt: "#f8b0d0",
+  // Epic building colors
+  epicGold: "#ffe740",
+  epicMarble: "#f0e8d8",
+  epicJade: "#3aad6a",
+  epicCrystal: "#90e8ff",
+  epicMagic: "#b070d0",
+  epicPortal: "#20e8e0"
 };
 function getTerrainPalette100(mode) {
   const colorAnchors = mode === "dark" ? DARK_COLOR_ANCHORS : LIGHT_COLOR_ANCHORS;
@@ -1477,11 +1624,19 @@ function renderBlock(cell, isWater = false) {
       `${cx},${cy + THH - inset}`,
       `${cx - THW + inset * 1.5},${cy}`
     ].join(" ");
-    parts.push(`<polygon points="${topPoints}" fill="${colors.top}" stroke="${colors.left}" stroke-width="0.3"/>`);
-    parts.push(`<polygon points="${innerPoints}" fill="${colors.top}" opacity="0.3" style="filter:brightness(1.3)"/>`);
-    parts.push(`<ellipse cx="${cx + 1}" cy="${cy - 0.5}" rx="1.5" ry="0.6" fill="#fff" opacity="0.15"/>`);
+    parts.push(
+      `<polygon points="${topPoints}" fill="${colors.top}" stroke="${colors.left}" stroke-width="0.3"/>`
+    );
+    parts.push(
+      `<polygon points="${innerPoints}" fill="${colors.top}" opacity="0.3" style="filter:brightness(1.3)"/>`
+    );
+    parts.push(
+      `<ellipse cx="${cx + 1}" cy="${cy - 0.5}" rx="1.5" ry="0.6" fill="#fff" opacity="0.15"/>`
+    );
   } else {
-    parts.push(`<polygon points="${topPoints}" fill="${colors.top}" stroke="${colors.left}" stroke-width="0.3"/>`);
+    parts.push(
+      `<polygon points="${topPoints}" fill="${colors.top}" stroke="${colors.left}" stroke-width="0.3"/>`
+    );
   }
   return parts.join("");
 }
@@ -1654,15 +1809,9 @@ function renderCelestials(seed, palette, isDark) {
     const sx = 770 + rng() * 50;
     const sy = 20 + rng() * 12;
     const sr = 7;
-    parts.push(
-      `<circle cx="${sx}" cy="${sy}" r="${sr + 6}" fill="#ffeebb" opacity="0.1"/>`
-    );
-    parts.push(
-      `<circle cx="${sx}" cy="${sy}" r="${sr + 3}" fill="#ffdd88" opacity="0.15"/>`
-    );
-    parts.push(
-      `<circle cx="${sx}" cy="${sy}" r="${sr}" fill="#ffe066" opacity="0.9"/>`
-    );
+    parts.push(`<circle cx="${sx}" cy="${sy}" r="${sr + 6}" fill="#ffeebb" opacity="0.1"/>`);
+    parts.push(`<circle cx="${sx}" cy="${sy}" r="${sr + 3}" fill="#ffdd88" opacity="0.15"/>`);
+    parts.push(`<circle cx="${sx}" cy="${sy}" r="${sr}" fill="#ffe066" opacity="0.9"/>`);
     parts.push(
       `<circle cx="${sx - 1.5}" cy="${sy - 1.5}" r="${sr * 0.45}" fill="#fff8cc" opacity="0.6"/>`
     );
@@ -1737,9 +1886,7 @@ function renderWaterOverlays(isoCells, palette, biomeMap) {
       `${cx - THW + innerInset * 1.2},${cy}`
     ].join(" ");
     const shimmerClass = cell.level100 > 22 && shimmerIdx < 8 ? ` class="river-shimmer-${shimmerIdx++}"` : "";
-    overlays.push(
-      `<polygon points="${outerPoints}" fill="${color}"${shimmerClass}/>`
-    );
+    overlays.push(`<polygon points="${outerPoints}" fill="${color}"${shimmerClass}/>`);
     overlays.push(
       `<polygon points="${innerPoints}" fill="${palette.assets.waterLight}" opacity="0.18"/>`
     );
@@ -1876,25 +2023,352 @@ function selectEvenly(items, max) {
 }
 
 // src/themes/terrain/assets.ts
+function getEffectiveLevel(level100, density) {
+  if (level100 === 0) return 0;
+  return clamp(level100 + (density - 5) * 5, 1, 99);
+}
 function getLevelPool100(level) {
-  if (level <= 4) return { types: ["rock", "boulder", "stump", "deadTree", "puddle"], chance: 0.06 };
-  if (level <= 8) return { types: ["rock", "boulder", "bush", "stump", "deadTree", "signpost"], chance: 0.1 };
-  if (level <= 14) return { types: ["whale", "fish", "fishSchool", "boat", "seagull", "dock", "waves", "kelp", "coral", "jellyfish", "turtle", "crab", "buoy"], chance: 0.16 };
-  if (level <= 22) return { types: ["fish", "fishSchool", "boat", "seagull", "waves", "dock", "kelp", "coral", "turtle", "sailboat", "lighthouse", "crab", "buoy"], chance: 0.18 };
-  if (level <= 27) return { types: ["rock", "boulder", "flower", "bush", "bird", "driftwood", "sandcastle", "tidePools", "heron", "shellfish", "cattail", "frog", "lily"], chance: 0.16 };
-  if (level <= 30) return { types: ["bush", "flower", "rock", "fence", "driftwood", "tidePools", "heron", "cattail", "frog", "lily", "puddle"], chance: 0.18 };
-  if (level <= 36) return { types: ["bush", "flower", "mushroom", "deer", "bird", "rabbit", "fox", "butterfly", "wildflowerPatch", "tallGrass", "signpost", "puddle"], chance: 0.22 };
-  if (level <= 42) return { types: ["pine", "deciduous", "bush", "mushroom", "flower", "deer", "rabbit", "fox", "butterfly", "beehive", "birch", "haybale", "tallGrass", "lantern"], chance: 0.25 };
-  if (level <= 52) return { types: ["pine", "pine", "deciduous", "willow", "bird", "bush", "owl", "squirrel", "moss", "fern", "berryBush", "log", "woodpile"], chance: 0.3 };
-  if (level <= 58) return { types: ["pine", "deciduous", "willow", "palm", "bird", "pine", "stump", "owl", "moss", "fern", "deadTree", "log", "spider", "campfire"], chance: 0.32 };
-  if (level <= 65) return { types: ["deciduous", "willow", "pine", "palm", "bird", "mushroom", "squirrel", "berryBush", "fern", "moss", "log", "woodpile"], chance: 0.28 };
-  if (level <= 70) return { types: ["wheat", "fence", "sheep", "chicken", "bush", "ricePaddy", "pumpkin", "orchard", "trough", "haystack", "signpost"], chance: 0.3 };
-  if (level <= 75) return { types: ["wheat", "fence", "scarecrow", "cow", "sheep", "chicken", "horse", "ricePaddy", "silo", "pigpen", "trough", "orchard", "beeFarm", "pumpkin"], chance: 0.35 };
-  if (level <= 78) return { types: ["barn", "sheep", "cow", "horse", "wheat", "fence", "chicken", "cart", "ricePaddy", "silo", "pigpen", "haystack", "orchard", "beeFarm", "haybale"], chance: 0.38 };
-  if (level <= 84) return { types: ["tent", "hut", "house", "well", "fence", "sheep", "barrel", "tavern", "bakery", "stable", "garden", "doghouse", "shrine", "lantern", "woodpile"], chance: 0.38 };
-  if (level <= 90) return { types: ["house", "houseB", "church", "windmill", "well", "barrel", "torch", "tavern", "bakery", "stable", "garden", "laundry", "wagon", "shrine", "lantern", "signpost"], chance: 0.42 };
-  if (level <= 95) return { types: ["house", "houseB", "market", "inn", "windmill", "flag", "cobblePath", "torch", "gardenTree", "flower", "bush", "cathedral", "library", "clocktower", "statue", "park", "warehouse", "lantern"], chance: 0.48 };
-  return { types: ["castle", "tower", "church", "market", "inn", "blacksmith", "bridge", "flag", "cobblePath", "gardenTree", "flower", "fountain", "cathedral", "library", "clocktower", "statue", "park", "gatehouse", "manor", "warehouse", "lantern"], chance: 0.55 };
+  if (level <= 4)
+    return { types: ["rock", "boulder", "stump", "deadTree", "puddle"], chance: 0.08 };
+  if (level <= 8)
+    return { types: ["rock", "boulder", "bush", "stump", "deadTree", "signpost"], chance: 0.13 };
+  if (level <= 14)
+    return {
+      types: [
+        "whale",
+        "fish",
+        "fishSchool",
+        "boat",
+        "seagull",
+        "dock",
+        "waves",
+        "kelp",
+        "coral",
+        "jellyfish",
+        "turtle",
+        "crab",
+        "buoy"
+      ],
+      chance: 0.21
+    };
+  if (level <= 22)
+    return {
+      types: [
+        "fish",
+        "fishSchool",
+        "boat",
+        "seagull",
+        "waves",
+        "dock",
+        "kelp",
+        "coral",
+        "turtle",
+        "sailboat",
+        "lighthouse",
+        "crab",
+        "buoy"
+      ],
+      chance: 0.24
+    };
+  if (level <= 27)
+    return {
+      types: [
+        "rock",
+        "boulder",
+        "flower",
+        "bush",
+        "bird",
+        "driftwood",
+        "sandcastle",
+        "tidePools",
+        "heron",
+        "shellfish",
+        "cattail",
+        "frog",
+        "lily"
+      ],
+      chance: 0.21
+    };
+  if (level <= 30)
+    return {
+      types: [
+        "bush",
+        "flower",
+        "rock",
+        "fence",
+        "driftwood",
+        "tidePools",
+        "heron",
+        "cattail",
+        "frog",
+        "lily",
+        "puddle"
+      ],
+      chance: 0.24
+    };
+  if (level <= 36)
+    return {
+      types: [
+        "bush",
+        "flower",
+        "mushroom",
+        "deer",
+        "bird",
+        "rabbit",
+        "fox",
+        "butterfly",
+        "wildflowerPatch",
+        "tallGrass",
+        "signpost",
+        "puddle"
+      ],
+      chance: 0.29
+    };
+  if (level <= 42)
+    return {
+      types: [
+        "pine",
+        "deciduous",
+        "bush",
+        "mushroom",
+        "flower",
+        "deer",
+        "rabbit",
+        "fox",
+        "butterfly",
+        "beehive",
+        "birch",
+        "haybale",
+        "tallGrass",
+        "lantern"
+      ],
+      chance: 0.33
+    };
+  if (level <= 52)
+    return {
+      types: [
+        "pine",
+        "pine",
+        "deciduous",
+        "willow",
+        "bird",
+        "bush",
+        "owl",
+        "squirrel",
+        "moss",
+        "fern",
+        "berryBush",
+        "log",
+        "woodpile"
+      ],
+      chance: 0.39
+    };
+  if (level <= 58)
+    return {
+      types: [
+        "pine",
+        "deciduous",
+        "willow",
+        "palm",
+        "bird",
+        "pine",
+        "stump",
+        "owl",
+        "moss",
+        "fern",
+        "deadTree",
+        "log",
+        "spider",
+        "campfire"
+      ],
+      chance: 0.42
+    };
+  if (level <= 65)
+    return {
+      types: [
+        "deciduous",
+        "willow",
+        "pine",
+        "palm",
+        "bird",
+        "mushroom",
+        "squirrel",
+        "berryBush",
+        "fern",
+        "moss",
+        "log",
+        "woodpile"
+      ],
+      chance: 0.36
+    };
+  if (level <= 70)
+    return {
+      types: [
+        "wheat",
+        "fence",
+        "sheep",
+        "goat",
+        "chicken",
+        "bush",
+        "ricePaddy",
+        "pumpkin",
+        "orchard",
+        "appleTree",
+        "pearTree",
+        "trough",
+        "haystack",
+        "signpost"
+      ],
+      chance: 0.39
+    };
+  if (level <= 75)
+    return {
+      types: [
+        "wheat",
+        "fence",
+        "scarecrow",
+        "cow",
+        "cow",
+        "sheep",
+        "goat",
+        "chicken",
+        "horse",
+        "donkey",
+        "ricePaddy",
+        "silo",
+        "pigpen",
+        "trough",
+        "orchard",
+        "appleTree",
+        "lemonTree",
+        "orangeTree",
+        "beeFarm",
+        "pumpkin"
+      ],
+      chance: 0.46
+    };
+  if (level <= 78)
+    return {
+      types: [
+        "barn",
+        "sheep",
+        "goat",
+        "cow",
+        "cow",
+        "horse",
+        "horse",
+        "donkey",
+        "wheat",
+        "fence",
+        "chicken",
+        "cart",
+        "ricePaddy",
+        "silo",
+        "pigpen",
+        "haystack",
+        "orchard",
+        "appleTree",
+        "oliveTree",
+        "lemonTree",
+        "peachTree",
+        "beeFarm",
+        "haybale"
+      ],
+      chance: 0.5
+    };
+  if (level <= 84)
+    return {
+      types: [
+        "tent",
+        "hut",
+        "house",
+        "well",
+        "fence",
+        "sheep",
+        "barrel",
+        "tavern",
+        "bakery",
+        "stable",
+        "garden",
+        "doghouse",
+        "shrine",
+        "lantern",
+        "woodpile"
+      ],
+      chance: 0.5
+    };
+  if (level <= 90)
+    return {
+      types: [
+        "house",
+        "houseB",
+        "church",
+        "windmill",
+        "well",
+        "barrel",
+        "torch",
+        "tavern",
+        "bakery",
+        "stable",
+        "garden",
+        "laundry",
+        "wagon",
+        "shrine",
+        "lantern",
+        "signpost"
+      ],
+      chance: 0.55
+    };
+  if (level <= 95)
+    return {
+      types: [
+        "house",
+        "houseB",
+        "market",
+        "inn",
+        "windmill",
+        "flag",
+        "cobblePath",
+        "torch",
+        "gardenTree",
+        "flower",
+        "bush",
+        "cathedral",
+        "library",
+        "clocktower",
+        "statue",
+        "park",
+        "warehouse",
+        "lantern"
+      ],
+      chance: 0.62
+    };
+  return {
+    types: [
+      "castle",
+      "tower",
+      "church",
+      "market",
+      "inn",
+      "blacksmith",
+      "bridge",
+      "flag",
+      "cobblePath",
+      "gardenTree",
+      "flower",
+      "fountain",
+      "cathedral",
+      "library",
+      "clocktower",
+      "statue",
+      "park",
+      "gatehouse",
+      "manor",
+      "warehouse",
+      "lantern"
+    ],
+    chance: 0.72
+  };
 }
 function blendWithBiome(pool, ctx, level) {
   const types = [...pool.types];
@@ -1963,27 +2437,25 @@ var SMIL_ANIMATED_TYPES = /* @__PURE__ */ new Set([
   "clocktower",
   "campfire"
 ]);
-var CSS_ANIMATED_TYPES = /* @__PURE__ */ new Set([
-  "cattail",
-  "tallGrass",
-  "laundry"
-]);
-function selectAssets(isoCells, seed, variantSeed, biomeMap, seasonRotation) {
+var CSS_ANIMATED_TYPES = /* @__PURE__ */ new Set(["cattail", "tallGrass", "laundry"]);
+function selectAssets(isoCells, seed, variantSeed, biomeMap, seasonRotation, density = 5, excludeCells) {
   const rng = seededRandom(seed);
   const variantRng = seededRandom(variantSeed ?? seed);
   const assets = [];
-  const smokeBudget = { remaining: 5 };
-  const animBudget = { smil: 12, css: 10 };
+  const smokeBudget = { remaining: 8 };
+  const animBudget = { smil: 18, css: 15 };
   const cellMap = /* @__PURE__ */ new Map();
   for (const cell of isoCells) {
     cellMap.set(`${cell.week},${cell.day}`, cell);
   }
   for (const cell of isoCells) {
-    let pool = getLevelPool100(cell.level100);
+    if (excludeCells?.has(`${cell.week},${cell.day}`)) continue;
+    const effectiveLevel = getEffectiveLevel(cell.level100, density);
+    let pool = getLevelPool100(effectiveLevel);
     const biomeCtx = biomeMap?.get(`${cell.week},${cell.day}`);
-    if (biomeCtx) pool = blendWithBiome(pool, biomeCtx, cell.level100);
+    if (biomeCtx) pool = blendWithBiome(pool, biomeCtx, effectiveLevel);
     if (seasonRotation != null) {
-      const { add, remove } = getSeasonalPoolOverrides(cell.week, seasonRotation, cell.level100);
+      const { add, remove } = getSeasonalPoolOverrides(cell.week, seasonRotation, effectiveLevel);
       pool = {
         types: [...pool.types.filter((t) => !remove.has(t)), ...add],
         chance: pool.chance
@@ -2011,7 +2483,7 @@ function selectAssets(isoCells, seed, variantSeed, biomeMap, seasonRotation) {
         else variant = 0;
       }
       assets.push({ cell, type, cx: cell.isoX, cy: cell.isoY, ox, oy, variant });
-      if (richness > 0.5 && cell.level100 >= 30 && rng() < 0.3) {
+      if (richness > 0.4 && cell.level100 >= 25 && rng() < 0.4) {
         let type2 = pool.types[Math.floor(rng() * pool.types.length)];
         if (type2 === "smoke" && smokeBudget.remaining <= 0) type2 = "torch";
         else if (type2 === "smoke") smokeBudget.remaining--;
@@ -2085,12 +2557,12 @@ function svgWaves(x, y, c, v) {
 }
 function svgRock(x, y, c, v) {
   if (v === 1) {
-    return `<ellipse cx="${x}" cy="${y - 1}" rx="1.8" ry="1.2" fill="${c.rock}"/>`;
+    return `<g transform="translate(${x},${y})"><ellipse cx="0" cy="-1" rx="2" ry="1.3" fill="${c.rock}"/><ellipse cx="-0.4" cy="-1.4" rx="1" ry="0.5" fill="${c.boulder}" opacity="0.6"/><ellipse cx="-0.6" cy="-1.2" rx="0.3" ry="0.15" fill="${c.snowCap}" opacity="0.3"/></g>`;
   }
   if (v === 2) {
-    return `<g transform="translate(${x},${y})"><ellipse cx="0" cy="-0.4" rx="2.2" ry="0.6" fill="${c.rock}"/><ellipse cx="0.3" cy="-1" rx="1.5" ry="0.5" fill="${c.boulder}"/></g>`;
+    return `<g transform="translate(${x},${y})"><ellipse cx="0" cy="-0.2" rx="2.5" ry="0.8" fill="${c.shadow}" opacity="0.2"/><ellipse cx="0" cy="-0.5" rx="2.4" ry="0.7" fill="${c.rock}"/><ellipse cx="0.4" cy="-1.2" rx="1.6" ry="0.5" fill="${c.boulder}"/><ellipse cx="0.2" cy="-1.8" rx="0.8" ry="0.3" fill="${c.rock}"/><ellipse cx="-0.3" cy="-1.5" rx="0.2" ry="0.1" fill="${c.snowCap}" opacity="0.25"/></g>`;
   }
-  return `<polygon points="${x - 1.5},${y} ${x - 1},${y - 2} ${x + 0.5},${y - 2.3} ${x + 1.5},${y - 1} ${x + 1},${y}" fill="${c.rock}"/>`;
+  return `<g transform="translate(${x},${y})"><polygon points="-1.5,0 -1.2,-1.8 -0.2,-2.5 0.8,-2.2 1.5,-1 1.2,0" fill="${c.rock}"/><polygon points="-0.8,-0.5 -0.5,-1.6 0.3,-1.8 0.8,-1 0.5,-0.3" fill="${c.boulder}" opacity="0.5"/><line x1="-0.5" y1="-1.2" x2="0.3" y2="-1.5" stroke="${c.shadow}" stroke-width="0.15" opacity="0.3"/></g>`;
 }
 function svgBoulder(x, y, c, v) {
   return `<g transform="translate(${x},${y})"><ellipse cx="0" cy="-1.5" rx="2.5" ry="1.8" fill="${c.boulder}"/><ellipse cx="-0.5" cy="-2" rx="1.5" ry="1" fill="${c.rock}" opacity="0.5"/></g>`;
@@ -2106,30 +2578,30 @@ function svgFlower(x, y, c, v) {
 }
 function svgBush(x, y, c, v) {
   if (v === 1) {
-    return `<ellipse cx="${x}" cy="${y - 1}" rx="3" ry="1" fill="${c.bush}"/>`;
+    return `<g transform="translate(${x},${y})"><ellipse cx="0" cy="-0.6" rx="3.2" ry="1.2" fill="${c.bushDark}"/><ellipse cx="-0.8" cy="-1" rx="1.8" ry="0.9" fill="${c.bush}"/><ellipse cx="0.9" cy="-0.9" rx="1.6" ry="0.8" fill="${c.bush}"/><ellipse cx="0" cy="-1.2" rx="1.2" ry="0.6" fill="${c.leafLight}"/></g>`;
   }
   if (v === 2) {
-    return `<g transform="translate(${x},${y})"><ellipse cx="0" cy="-1.5" rx="2" ry="1.5" fill="${c.bush}"/><circle cx="-0.8" cy="-2" r="0.3" fill="${c.flower}"/><circle cx="0.5" cy="-2.3" r="0.3" fill="${c.flower}"/><circle cx="0.8" cy="-1.5" r="0.25" fill="${c.flower}"/></g>`;
+    return `<g transform="translate(${x},${y})"><ellipse cx="0" cy="-1" rx="2.3" ry="1.6" fill="${c.bushDark}"/><ellipse cx="-0.5" cy="-1.5" rx="1.5" ry="1.1" fill="${c.bush}"/><ellipse cx="0.6" cy="-1.3" rx="1.3" ry="1" fill="${c.bush}"/><ellipse cx="0" cy="-1.8" rx="0.9" ry="0.6" fill="${c.leafLight}"/><circle cx="-0.9" cy="-2.1" r="0.35" fill="${c.flower}"/><circle cx="0.4" cy="-2.4" r="0.3" fill="${c.flowerAlt}"/><circle cx="0.9" cy="-1.8" r="0.28" fill="${c.flower}"/><circle cx="-0.3" cy="-2.6" r="0.25" fill="${c.flowerAlt}"/></g>`;
   }
-  return `<ellipse cx="${x}" cy="${y - 1.5}" rx="2" ry="1.5" fill="${c.bush}"/>`;
+  return `<g transform="translate(${x},${y})"><ellipse cx="0" cy="-1" rx="2.2" ry="1.6" fill="${c.bushDark}"/><ellipse cx="-0.4" cy="-1.5" rx="1.4" ry="1" fill="${c.bush}"/><ellipse cx="0.5" cy="-1.3" rx="1.2" ry="0.9" fill="${c.bush}"/><ellipse cx="0" cy="-1.8" rx="0.8" ry="0.5" fill="${c.leafLight}"/></g>`;
 }
 function svgPine(x, y, c, v) {
   if (v === 1) {
-    return `<g transform="translate(${x},${y})"><line x1="0" y1="0" x2="0" y2="-1.5" stroke="${c.trunk}" stroke-width="0.7"/><polygon points="0,-5 -3,-1.5 3,-1.5" fill="${c.pine}"/><polygon points="0,-6.5 -2.2,-3 2.2,-3" fill="${c.pine}" opacity="0.85"/></g>`;
+    return `<g transform="translate(${x},${y})"><ellipse cx="0" cy="-0.2" rx="1" ry="0.3" fill="${c.shadow}" opacity="0.15"/><rect x="-0.4" y="-1.8" width="0.8" height="1.8" fill="${c.trunk}"/><polygon points="0,-5.5 -3.2,-1.5 3.2,-1.5" fill="${c.bushDark}"/><polygon points="0,-5.5 -2.8,-2 2.8,-2" fill="${c.pine}"/><polygon points="0,-7 -2.4,-3.5 2.4,-3.5" fill="${c.bushDark}" opacity="0.9"/><polygon points="0,-7 -2,-4 2,-4" fill="${c.pine}"/><polygon points="0,-8 -1.2,-5.5 1.2,-5.5" fill="${c.leafLight}" opacity="0.8"/></g>`;
   }
   if (v === 2) {
-    return `<g transform="translate(${x},${y})"><path d="M0,0 Q0.5,-2 1,-3" stroke="${c.trunk}" fill="none" stroke-width="0.6"/><polygon points="1,-8 -1.5,-3 3.5,-3" fill="${c.pine}"/><polygon points="1.2,-9.5 -0.5,-5.5 2.8,-5.5" fill="${c.pine}" opacity="0.85"/></g>`;
+    return `<g transform="translate(${x},${y})"><ellipse cx="0.5" cy="-0.2" rx="1" ry="0.3" fill="${c.shadow}" opacity="0.15"/><path d="M0,0 Q0.4,-1.5 0.8,-3" stroke="${c.trunk}" fill="none" stroke-width="0.7"/><polygon points="1,-8.5 -1.8,-3 3.8,-3" fill="${c.bushDark}"/><polygon points="1,-8.5 -1.4,-3.5 3.4,-3.5" fill="${c.pine}"/><polygon points="1.2,-10 -0.8,-6 3.2,-6" fill="${c.bushDark}" opacity="0.9"/><polygon points="1.2,-10 -0.4,-6.5 2.8,-6.5" fill="${c.pine}"/><polygon points="1.2,-10.8 0,-7.5 2.4,-7.5" fill="${c.leafLight}" opacity="0.7"/></g>`;
   }
-  return `<g transform="translate(${x},${y})"><line x1="0" y1="0" x2="0" y2="-2" stroke="${c.trunk}" stroke-width="0.6"/><polygon points="0,-8 -2.5,-2 2.5,-2" fill="${c.pine}"/><polygon points="0,-10 -1.8,-5 1.8,-5" fill="${c.pine}" opacity="0.85"/></g>`;
+  return `<g transform="translate(${x},${y})"><ellipse cx="0" cy="-0.2" rx="0.8" ry="0.25" fill="${c.shadow}" opacity="0.15"/><rect x="-0.35" y="-2.5" width="0.7" height="2.5" fill="${c.trunk}"/><polygon points="0,-8.5 -2.8,-2 2.8,-2" fill="${c.bushDark}"/><polygon points="0,-8.5 -2.4,-2.5 2.4,-2.5" fill="${c.pine}"/><polygon points="0,-10.5 -2,-5.5 2,-5.5" fill="${c.bushDark}" opacity="0.9"/><polygon points="0,-10.5 -1.6,-6 1.6,-6" fill="${c.pine}"/><polygon points="0,-11.5 -0.9,-8 0.9,-8" fill="${c.leafLight}" opacity="0.7"/></g>`;
 }
 function svgDeciduous(x, y, c, v) {
   if (v === 1) {
-    return `<g transform="translate(${x},${y})"><line x1="0" y1="0" x2="0" y2="-4" stroke="${c.trunk}" stroke-width="0.6"/><ellipse cx="0" cy="-7" rx="2" ry="3.5" fill="${c.leaf}"/><ellipse cx="-0.5" cy="-6.5" rx="1.3" ry="2.5" fill="${c.bush}" opacity="0.7"/></g>`;
+    return `<g transform="translate(${x},${y})"><ellipse cx="0" cy="-0.2" rx="0.8" ry="0.25" fill="${c.shadow}" opacity="0.15"/><rect x="-0.35" y="-4.5" width="0.7" height="4.5" fill="${c.trunk}"/><line x1="-0.3" y1="-3.5" x2="-1" y2="-4.5" stroke="${c.trunk}" stroke-width="0.3"/><line x1="0.3" y1="-4" x2="0.8" y2="-5" stroke="${c.trunk}" stroke-width="0.25"/><ellipse cx="0" cy="-7.5" rx="2.3" ry="3.8" fill="${c.bushDark}"/><ellipse cx="-0.3" cy="-7" rx="1.8" ry="3" fill="${c.leaf}"/><ellipse cx="0.5" cy="-7.8" rx="1.4" ry="2.5" fill="${c.bush}" opacity="0.8"/><ellipse cx="-0.2" cy="-8.5" rx="1" ry="1.5" fill="${c.leafLight}" opacity="0.6"/></g>`;
   }
   if (v === 2) {
-    return `<g transform="translate(${x},${y})"><line x1="0" y1="0" x2="0" y2="-2.5" stroke="${c.trunk}" stroke-width="0.7"/><line x1="0" y1="-2.5" x2="-2" y2="-4" stroke="${c.trunk}" stroke-width="0.4"/><line x1="0" y1="-2.5" x2="2" y2="-4" stroke="${c.trunk}" stroke-width="0.4"/><circle cx="-2" cy="-5" r="2" fill="${c.leaf}"/><circle cx="2" cy="-5" r="2" fill="${c.leaf}"/><circle cx="0" cy="-5.5" r="1.8" fill="${c.bush}" opacity="0.7"/></g>`;
+    return `<g transform="translate(${x},${y})"><ellipse cx="0" cy="-0.2" rx="1.5" ry="0.4" fill="${c.shadow}" opacity="0.15"/><rect x="-0.4" y="-3" width="0.8" height="3" fill="${c.trunk}"/><line x1="0" y1="-2.5" x2="-2" y2="-4" stroke="${c.trunk}" stroke-width="0.45"/><line x1="0" y1="-2.5" x2="2" y2="-4" stroke="${c.trunk}" stroke-width="0.45"/><circle cx="-2" cy="-5.5" r="2.3" fill="${c.bushDark}"/><circle cx="-2" cy="-5.5" r="2" fill="${c.leaf}"/><circle cx="-2.5" cy="-6" r="1.2" fill="${c.leafLight}" opacity="0.6"/><circle cx="2" cy="-5.5" r="2.3" fill="${c.bushDark}"/><circle cx="2" cy="-5.5" r="2" fill="${c.leaf}"/><circle cx="1.5" cy="-6" r="1.2" fill="${c.leafLight}" opacity="0.6"/><circle cx="0" cy="-6" r="2" fill="${c.bush}" opacity="0.8"/></g>`;
   }
-  return `<g transform="translate(${x},${y})"><line x1="0" y1="0" x2="0" y2="-3" stroke="${c.trunk}" stroke-width="0.6"/><circle cx="0" cy="-5.5" r="2.8" fill="${c.leaf}"/><circle cx="-1.2" cy="-5" r="2" fill="${c.bush}" opacity="0.7"/></g>`;
+  return `<g transform="translate(${x},${y})"><ellipse cx="0" cy="-0.2" rx="1" ry="0.3" fill="${c.shadow}" opacity="0.15"/><rect x="-0.35" y="-3.5" width="0.7" height="3.5" fill="${c.trunk}"/><line x1="-0.2" y1="-3" x2="-1.2" y2="-4" stroke="${c.trunk}" stroke-width="0.3"/><line x1="0.2" y1="-2.8" x2="1" y2="-3.8" stroke="${c.trunk}" stroke-width="0.25"/><circle cx="0" cy="-6" r="3.2" fill="${c.bushDark}"/><circle cx="0" cy="-6" r="2.9" fill="${c.leaf}"/><circle cx="-1" cy="-5.5" r="2" fill="${c.bush}" opacity="0.75"/><circle cx="0.8" cy="-6.5" r="1.5" fill="${c.leafLight}" opacity="0.6"/></g>`;
 }
 function svgMushroom(x, y, c, v) {
   if (v === 1) {
@@ -2195,13 +2667,14 @@ function svgWheat(x, y, c, v) {
   return `<g transform="translate(${x},${y})"><line x1="-1.5" y1="0" x2="-1.5" y2="-4" stroke="${c.wheat}" stroke-width="0.3"/><line x1="0" y1="0" x2="0" y2="-4.5" stroke="${c.wheat}" stroke-width="0.3"/><line x1="1.5" y1="0" x2="1.5" y2="-3.8" stroke="${c.wheat}" stroke-width="0.3"/><circle cx="-1.5" cy="-4.2" r="0.5" fill="${c.wheat}"/><circle cx="0" cy="-4.8" r="0.5" fill="${c.wheat}"/><circle cx="1.5" cy="-4" r="0.5" fill="${c.wheat}"/></g>`;
 }
 function svgFence(x, y, c, v) {
+  const postCap = (px) => `<polygon points="${px - 0.3},-3 ${px},-3.5 ${px + 0.3},-3" fill="${c.fence}"/>`;
   if (v === 1) {
-    return `<g transform="translate(${x},${y})"><line x1="-3" y1="-1.5" x2="0" y2="-1.5" stroke="${c.fence}" stroke-width="0.4"/><line x1="-3" y1="-2.5" x2="0" y2="-2.5" stroke="${c.fence}" stroke-width="0.4"/><line x1="-3" y1="0" x2="-3" y2="-3" stroke="${c.fence}" stroke-width="0.4"/><line x1="0" y1="0" x2="0" y2="-3" stroke="${c.fence}" stroke-width="0.4"/><line x1="0" y1="-1.5" x2="0" y2="-1.5" stroke="${c.fence}" stroke-width="0.4"/><line x1="0" y1="-1.5" x2="0" y2="0" stroke="${c.fence}" stroke-width="0.4"/><line x1="0" y1="-2.5" x2="3" y2="-2.5" stroke="${c.fence}" stroke-width="0.4"/><line x1="0" y1="-1.5" x2="3" y2="-1.5" stroke="${c.fence}" stroke-width="0.4"/><line x1="3" y1="0" x2="3" y2="-3" stroke="${c.fence}" stroke-width="0.4"/></g>`;
+    return `<g transform="translate(${x},${y})"><line x1="-3" y1="-1.5" x2="0" y2="-1.5" stroke="${c.fence}" stroke-width="0.5"/><line x1="-3" y1="-2.3" x2="0" y2="-2.3" stroke="${c.fence}" stroke-width="0.4"/><rect x="-3.2" y="-3" width="0.5" height="3" fill="${c.fence}"/><rect x="-0.25" y="-3" width="0.5" height="3" fill="${c.fence}"/>` + postCap(-3) + postCap(0) + `<line x1="0" y1="-1.5" x2="3" y2="-1.5" stroke="${c.fence}" stroke-width="0.5"/><line x1="0" y1="-2.3" x2="3" y2="-2.3" stroke="${c.fence}" stroke-width="0.4"/><rect x="2.75" y="-3" width="0.5" height="3" fill="${c.fence}"/>` + postCap(3) + `</g>`;
   }
   if (v === 2) {
-    return `<g transform="translate(${x},${y})"><line x1="-3" y1="-1.5" x2="-0.5" y2="-1.5" stroke="${c.fence}" stroke-width="0.4"/><line x1="0.5" y1="-1.5" x2="3" y2="-1.5" stroke="${c.fence}" stroke-width="0.4"/><line x1="-3" y1="-2.5" x2="-0.5" y2="-2.5" stroke="${c.fence}" stroke-width="0.4"/><line x1="0.5" y1="-2.5" x2="3" y2="-2.5" stroke="${c.fence}" stroke-width="0.4"/><line x1="-3" y1="0" x2="-3" y2="-3" stroke="${c.fence}" stroke-width="0.4"/><line x1="-0.5" y1="0" x2="-0.5" y2="-3.3" stroke="${c.fence}" stroke-width="0.4"/><line x1="0.5" y1="0" x2="0.5" y2="-3.3" stroke="${c.fence}" stroke-width="0.4"/><line x1="3" y1="0" x2="3" y2="-3" stroke="${c.fence}" stroke-width="0.4"/></g>`;
+    return `<g transform="translate(${x},${y})"><line x1="-3" y1="-1.5" x2="-0.7" y2="-1.5" stroke="${c.fence}" stroke-width="0.5"/><line x1="0.7" y1="-1.5" x2="3" y2="-1.5" stroke="${c.fence}" stroke-width="0.5"/><line x1="-3" y1="-2.3" x2="-0.7" y2="-2.3" stroke="${c.fence}" stroke-width="0.4"/><line x1="0.7" y1="-2.3" x2="3" y2="-2.3" stroke="${c.fence}" stroke-width="0.4"/><rect x="-3.2" y="-3" width="0.5" height="3" fill="${c.fence}"/><rect x="-0.85" y="-3.5" width="0.4" height="3.5" fill="${c.fence}"/><rect x="0.55" y="-3.5" width="0.4" height="3.5" fill="${c.fence}"/><rect x="2.75" y="-3" width="0.5" height="3" fill="${c.fence}"/>` + postCap(-3) + `<circle cx="-0.65" cy="-3.7" r="0.25" fill="${c.fence}"/><circle cx="0.75" cy="-3.7" r="0.25" fill="${c.fence}"/>` + postCap(3) + `</g>`;
   }
-  return `<g transform="translate(${x},${y})"><line x1="-3" y1="-1.5" x2="3" y2="-1.5" stroke="${c.fence}" stroke-width="0.4"/><line x1="-3" y1="-2.5" x2="3" y2="-2.5" stroke="${c.fence}" stroke-width="0.4"/><line x1="-3" y1="0" x2="-3" y2="-3" stroke="${c.fence}" stroke-width="0.4"/><line x1="0" y1="0" x2="0" y2="-3" stroke="${c.fence}" stroke-width="0.4"/><line x1="3" y1="0" x2="3" y2="-3" stroke="${c.fence}" stroke-width="0.4"/></g>`;
+  return `<g transform="translate(${x},${y})"><line x1="-3" y1="-1.5" x2="3" y2="-1.5" stroke="${c.fence}" stroke-width="0.5"/><line x1="-3" y1="-2.3" x2="3" y2="-2.3" stroke="${c.fence}" stroke-width="0.4"/><rect x="-3.2" y="-3" width="0.5" height="3" fill="${c.fence}"/><rect x="-0.25" y="-3" width="0.5" height="3" fill="${c.fence}"/><rect x="2.75" y="-3" width="0.5" height="3" fill="${c.fence}"/>` + postCap(-3) + postCap(0) + postCap(3) + `</g>`;
 }
 function svgScarecrow(x, y, c, v) {
   if (v === 1) {
@@ -2223,39 +2696,61 @@ function svgBarn(x, y, c, v) {
 }
 function svgSheep(x, y, c, v) {
   if (v === 1) {
-    return `<g transform="translate(${x},${y})"><ellipse cx="0" cy="-0.8" rx="2" ry="1" fill="${c.sheep}"/><circle cx="-1.8" cy="-1.2" r="0.7" fill="${c.sheepHead}"/><circle cx="-1.8" cy="-1.4" r="0.12" fill="#fff"/></g>`;
+    return `<g transform="translate(${x},${y})"><ellipse cx="0" cy="-0.2" rx="2" ry="0.5" fill="${c.shadow}" opacity="0.15"/><ellipse cx="0" cy="-2" rx="2.2" ry="1.4" fill="${c.sheep}"/><circle cx="-1.3" cy="-2.3" r="1" fill="${c.sheep}"/><circle cx="1.3" cy="-2.3" r="1" fill="${c.sheep}"/><circle cx="0" cy="-2.8" r="0.9" fill="${c.sheep}"/><ellipse cx="-1.8" cy="-1.2" rx="0.7" ry="0.5" fill="${c.sheepHead}"/><ellipse cx="-1.3" cy="-1.8" rx="0.25" ry="0.4" fill="${c.sheepHead}"/><rect x="-1.1" y="-0.8" width="0.5" height="1" fill="${c.sheepHead}"/><rect x="0.6" y="-0.8" width="0.5" height="1" fill="${c.sheepHead}"/></g>`;
   }
   if (v === 2) {
-    return `<g transform="translate(${x},${y})"><circle cx="0" cy="-2" r="1.6" fill="${c.sheep}"/><circle cx="-1.2" cy="-2.2" r="1.3" fill="${c.sheep}"/><circle cx="1.2" cy="-2.2" r="1.3" fill="${c.sheep}"/><circle cx="-2" cy="-1.5" r="0.7" fill="${c.sheepHead}"/><ellipse cx="-2.5" cy="-1.2" rx="0.5" ry="0.3" fill="${c.sheepHead}"/><line x1="-1" y1="-0.8" x2="-1" y2="0.3" stroke="${c.sheepHead}" stroke-width="0.35"/><line x1="1" y1="-0.8" x2="1" y2="0.3" stroke="${c.sheepHead}" stroke-width="0.35"/></g>`;
+    return `<g transform="translate(${x},${y})"><ellipse cx="0" cy="-1" rx="2.5" ry="1" fill="${c.sheep}"/><circle cx="-1.5" cy="-1.3" r="0.8" fill="${c.sheep}"/><circle cx="1.2" cy="-1.2" r="0.7" fill="${c.sheep}"/><circle cx="-2.2" cy="-1.5" r="0.6" fill="${c.sheepHead}"/><circle cx="-2.4" cy="-1.6" r="0.1" fill="#222"/></g>`;
   }
-  return `<g transform="translate(${x},${y})"><circle cx="0" cy="-2" r="1.6" fill="${c.sheep}"/><circle cx="-1.2" cy="-2.2" r="1.3" fill="${c.sheep}"/><circle cx="1.2" cy="-2.2" r="1.3" fill="${c.sheep}"/><circle cx="-0.5" cy="-3" r="1.1" fill="${c.sheep}"/><circle cx="0.6" cy="-3" r="1.1" fill="${c.sheep}"/><circle cx="-2" cy="-2.8" r="0.9" fill="${c.sheepHead}"/><ellipse cx="-2.8" cy="-2.6" rx="0.6" ry="0.4" fill="${c.sheepHead}"/><ellipse cx="-1.5" cy="-3.7" rx="0.3" ry="0.5" fill="${c.sheepHead}" transform="rotate(-20 -1.5 -3.7)"/><ellipse cx="-2.3" cy="-3.6" rx="0.3" ry="0.5" fill="${c.sheepHead}" transform="rotate(15 -2.3 -3.6)"/><circle cx="-2.1" cy="-3" r="0.15" fill="#fff"/><line x1="-1.2" y1="-0.8" x2="-1.2" y2="0.3" stroke="${c.sheepHead}" stroke-width="0.35"/><line x1="-0.3" y1="-0.6" x2="-0.3" y2="0.3" stroke="${c.sheepHead}" stroke-width="0.35"/><line x1="0.5" y1="-0.6" x2="0.5" y2="0.3" stroke="${c.sheepHead}" stroke-width="0.35"/><line x1="1.2" y1="-0.8" x2="1.2" y2="0.3" stroke="${c.sheepHead}" stroke-width="0.35"/></g>`;
+  return `<g transform="translate(${x},${y})"><ellipse cx="0" cy="-0.2" rx="1.8" ry="0.4" fill="${c.shadow}" opacity="0.15"/><ellipse cx="0" cy="-2.2" rx="2" ry="1.3" fill="${c.sheep}"/><circle cx="-1.2" cy="-2.5" r="0.9" fill="${c.sheep}"/><circle cx="1" cy="-2.4" r="0.85" fill="${c.sheep}"/><circle cx="0" cy="-3" r="0.8" fill="${c.sheep}"/><ellipse cx="-2" cy="-2.8" rx="0.7" ry="0.55" fill="${c.sheepHead}"/><circle cx="-2.1" cy="-2.9" r="0.12" fill="#222"/><ellipse cx="-1.5" cy="-3.3" rx="0.2" ry="0.35" fill="${c.sheepHead}" transform="rotate(-15 -1.5 -3.3)"/><rect x="-1.2" y="-1" width="0.45" height="1.2" fill="${c.sheepHead}"/><rect x="-0.4" y="-1" width="0.45" height="1.2" fill="${c.sheepHead}"/><rect x="0.4" y="-1" width="0.45" height="1.2" fill="${c.sheepHead}"/><rect x="1" y="-1" width="0.45" height="1.2" fill="${c.sheepHead}"/></g>`;
 }
 function svgCow(x, y, c, v) {
   if (v === 1) {
-    return `<g transform="translate(${x},${y})"><ellipse cx="0" cy="-1.8" rx="2.5" ry="1.5" fill="${c.cow}"/><ellipse cx="-0.8" cy="-2.2" rx="0.8" ry="0.6" fill="${c.cowSpot}"/><ellipse cx="0.5" cy="-1.3" rx="0.6" ry="0.5" fill="${c.cowSpot}"/><circle cx="2.2" cy="-2.5" r="0.9" fill="${c.cow}"/><circle cx="2.2" cy="-2.3" r="0.4" fill="${c.cowSpot}" opacity="0.5"/><line x1="2.8" y1="-3.3" x2="3.2" y2="-3.8" stroke="${c.fence}" stroke-width="0.3"/><line x1="1.8" y1="-3.3" x2="1.4" y2="-3.8" stroke="${c.fence}" stroke-width="0.3"/></g>`;
+    return `<g transform="translate(${x},${y})"><ellipse cx="0" cy="-0.2" rx="2.5" ry="0.5" fill="${c.shadow}" opacity="0.15"/><ellipse cx="0" cy="-2.2" rx="2.8" ry="1.6" fill="${c.cow}"/><ellipse cx="-0.5" cy="-2.5" rx="0.9" ry="0.7" fill="${c.cowSpot}"/><ellipse cx="1" cy="-1.8" rx="0.7" ry="0.5" fill="${c.cowSpot}"/><ellipse cx="2.5" cy="-1.5" rx="0.9" ry="0.7" fill="${c.cow}"/><ellipse cx="3" cy="-1.3" rx="0.5" ry="0.4" fill="${c.cowSpot}" opacity="0.6"/><line x1="2.2" y1="-2.1" x2="1.8" y2="-2.8" stroke="${c.fence}" stroke-width="0.3"/><line x1="2.8" y1="-2.1" x2="3.2" y2="-2.7" stroke="${c.fence}" stroke-width="0.3"/><circle cx="2.8" cy="-1.6" r="0.12" fill="#222"/><rect x="-1.5" y="-0.8" width="0.5" height="1" fill="${c.cow}"/><rect x="-0.5" y="-0.8" width="0.5" height="1" fill="${c.cow}"/><rect x="0.5" y="-0.8" width="0.5" height="1" fill="${c.cow}"/><rect x="1.3" y="-0.8" width="0.5" height="1" fill="${c.cow}"/><path d="M-2.8,-2.5 Q-3.5,-2 -3.2,-1" stroke="${c.cowSpot}" fill="none" stroke-width="0.25"/></g>`;
   }
   if (v === 2) {
-    return `<g transform="translate(${x},${y})"><ellipse cx="0" cy="-1.8" rx="2.5" ry="1.5" fill="${c.cow}"/><ellipse cx="0.8" cy="-2.2" rx="0.8" ry="0.6" fill="${c.cowSpot}"/><ellipse cx="-0.5" cy="-1.3" rx="0.6" ry="0.5" fill="${c.cowSpot}"/><circle cx="-2.3" cy="-1.5" r="0.8" fill="${c.cow}"/><line x1="-2.8" y1="-2.2" x2="-3.1" y2="-2.6" stroke="${c.fence}" stroke-width="0.25"/><line x1="-1.9" y1="-2.2" x2="-1.6" y2="-2.6" stroke="${c.fence}" stroke-width="0.25"/></g>`;
+    return `<g transform="translate(${x},${y})"><ellipse cx="0" cy="-0.2" rx="2.5" ry="0.5" fill="${c.shadow}" opacity="0.15"/><ellipse cx="0" cy="-2.2" rx="2.8" ry="1.6" fill="${c.cow}"/><ellipse cx="0.3" cy="-2.3" rx="1.2" ry="0.9" fill="${c.cowSpot}"/><ellipse cx="-2.5" cy="-2.8" rx="0.9" ry="0.7" fill="${c.cow}"/><ellipse cx="-3.2" cy="-2.6" rx="0.5" ry="0.4" fill="${c.cowSpot}" opacity="0.5"/><line x1="-2.8" y1="-3.4" x2="-3.2" y2="-4" stroke="${c.fence}" stroke-width="0.3"/><line x1="-2.2" y1="-3.4" x2="-1.8" y2="-4" stroke="${c.fence}" stroke-width="0.3"/><circle cx="-2.3" cy="-3" r="0.12" fill="#222"/><rect x="-1.3" y="-0.8" width="0.5" height="1" fill="${c.cow}"/><rect x="-0.3" y="-0.8" width="0.5" height="1" fill="${c.cow}"/><rect x="0.7" y="-0.8" width="0.5" height="1" fill="${c.cow}"/><rect x="1.5" y="-0.8" width="0.5" height="1" fill="${c.cow}"/></g>`;
   }
-  return `<g transform="translate(${x},${y})"><ellipse cx="0" cy="-1.8" rx="2.5" ry="1.5" fill="${c.cow}"/><ellipse cx="0.8" cy="-2.2" rx="0.8" ry="0.6" fill="${c.cowSpot}"/><ellipse cx="-0.5" cy="-1.3" rx="0.6" ry="0.5" fill="${c.cowSpot}"/><circle cx="-2.2" cy="-2.5" r="0.9" fill="${c.cow}"/><circle cx="-2.2" cy="-2.3" r="0.4" fill="${c.cowSpot}" opacity="0.5"/><line x1="-2.8" y1="-3.3" x2="-3.2" y2="-3.8" stroke="${c.fence}" stroke-width="0.3"/><line x1="-1.8" y1="-3.3" x2="-1.4" y2="-3.8" stroke="${c.fence}" stroke-width="0.3"/></g>`;
+  return `<g transform="translate(${x},${y})"><ellipse cx="0" cy="-0.2" rx="2.5" ry="0.5" fill="${c.shadow}" opacity="0.15"/><ellipse cx="0" cy="-2.2" rx="2.8" ry="1.6" fill="${c.cow}"/><ellipse cx="0.8" cy="-2.5" rx="1" ry="0.7" fill="${c.cowSpot}"/><ellipse cx="-0.8" cy="-1.7" rx="0.6" ry="0.5" fill="${c.cowSpot}"/><ellipse cx="-2.5" cy="-2.8" rx="0.9" ry="0.7" fill="${c.cow}"/><ellipse cx="-3" cy="-2.6" rx="0.45" ry="0.35" fill="${c.cowSpot}" opacity="0.5"/><line x1="-2.8" y1="-3.4" x2="-3.3" y2="-4" stroke="${c.fence}" stroke-width="0.3"/><line x1="-2.2" y1="-3.4" x2="-1.7" y2="-4" stroke="${c.fence}" stroke-width="0.3"/><ellipse cx="-2" cy="-3.3" rx="0.25" ry="0.4" fill="${c.cow}"/><circle cx="-2.4" cy="-3" r="0.12" fill="#222"/><ellipse cx="0.5" cy="-0.9" rx="0.6" ry="0.3" fill="${c.cowSpot}" opacity="0.4"/><rect x="-1.5" y="-0.8" width="0.55" height="1" fill="${c.cow}"/><rect x="-0.5" y="-0.8" width="0.55" height="1" fill="${c.cow}"/><rect x="0.5" y="-0.8" width="0.55" height="1" fill="${c.cow}"/><rect x="1.4" y="-0.8" width="0.55" height="1" fill="${c.cow}"/><path d="M2.8,-2.5 Q3.5,-2 3.2,-1" stroke="${c.cowSpot}" fill="none" stroke-width="0.3"/><ellipse cx="3.2" cy="-0.9" rx="0.3" ry="0.2" fill="${c.cowSpot}"/></g>`;
 }
 function svgChicken(x, y, c, v) {
   if (v === 1) {
-    return `<g transform="translate(${x},${y})"><ellipse cx="0" cy="-1.2" rx="1" ry="1" fill="${c.chicken}"/><circle cx="0" cy="-2.2" r="0.5" fill="${c.chicken}"/><path d="M0,-2.7 Q0.2,-3.1 0.4,-2.7 Q0.6,-3 0.7,-2.6" fill="${c.flag}" stroke="none"/><polygon points="-0.5,-2.1 -0.9,-2 -0.5,-1.9" fill="${c.wheat}"/><line x1="-0.3" y1="-0.2" x2="-0.5" y2="0.3" stroke="${c.wheat}" stroke-width="0.25"/><line x1="0.3" y1="-0.2" x2="0.5" y2="0.3" stroke="${c.wheat}" stroke-width="0.25"/></g>`;
+    return `<g transform="translate(${x},${y})"><ellipse cx="0" cy="-0.1" rx="1" ry="0.25" fill="${c.shadow}" opacity="0.1"/><ellipse cx="0" cy="-1.3" rx="1.3" ry="1" fill="${c.chicken}"/><path d="M1.2,-1.5 Q2,-2 1.8,-2.8 Q1.5,-2.5 1.3,-1.8" fill="${c.chicken}"/><ellipse cx="0.2" cy="-1.4" rx="0.7" ry="0.5" fill="${c.trunk}" opacity="0.3"/><circle cx="-1.2" cy="-0.8" r="0.55" fill="${c.chicken}"/><path d="M-1.2,-1.3 Q-1,-1.7 -0.9,-1.3 Q-0.7,-1.6 -0.6,-1.2" fill="${c.flag}"/><circle cx="-1.1" cy="-0.85" r="0.1" fill="#222"/><polygon points="-1.5,-0.7 -1.9,-0.6 -1.5,-0.5" fill="${c.wheat}"/><ellipse cx="-1.3" cy="-0.5" rx="0.12" ry="0.2" fill="${c.flag}"/><line x1="-0.3" y1="-0.3" x2="-0.4" y2="0.3" stroke="${c.wheat}" stroke-width="0.2"/><line x1="0.4" y1="-0.3" x2="0.5" y2="0.3" stroke="${c.wheat}" stroke-width="0.2"/></g>`;
   }
   if (v === 2) {
-    return `<g transform="translate(${x},${y})"><ellipse cx="0" cy="-1" rx="1.2" ry="0.9" fill="${c.chicken}"/><circle cx="-1" cy="-1.6" r="0.6" fill="${c.chicken}"/><path d="M-1,-2.2 Q-0.8,-2.8 -0.6,-2.2" fill="${c.flag}" stroke="none"/><polygon points="-1.5,-1.5 -2,-1.3 -1.5,-1.2" fill="${c.wheat}"/><circle cx="2" cy="-0.3" r="0.3" fill="${c.wheat}"/><circle cx="2.8" cy="-0.4" r="0.25" fill="${c.wheat}"/></g>`;
+    return `<g transform="translate(${x},${y})"><ellipse cx="0" cy="-1.5" rx="1.4" ry="1.1" fill="${c.chicken}"/><path d="M1.3,-1.8 Q2,-2.5 1.8,-3.2" fill="${c.chicken}"/><circle cx="-1.2" cy="-2.2" r="0.6" fill="${c.chicken}"/><path d="M-1.2,-2.8 Q-1,-3.2 -0.85,-2.8 Q-0.7,-3.1 -0.6,-2.7" fill="${c.flag}"/><circle cx="-1" cy="-2.25" r="0.1" fill="#222"/><polygon points="-1.7,-2.1 -2.1,-2 -1.7,-1.9" fill="${c.wheat}"/><circle cx="2.2" cy="-0.5" r="0.4" fill="${c.wheat}"/><circle cx="2.4" cy="-0.55" r="0.08" fill="#222"/><polygon points="2.5,-0.5 2.7,-0.45 2.5,-0.4" fill="${c.flag}" opacity="0.8"/><circle cx="3" cy="-0.6" r="0.35" fill="${c.wheat}"/><circle cx="3.15" cy="-0.65" r="0.07" fill="#222"/></g>`;
   }
-  return `<g transform="translate(${x},${y})"><ellipse cx="0" cy="-1" rx="1.2" ry="0.9" fill="${c.chicken}"/><circle cx="-1" cy="-1.6" r="0.6" fill="${c.chicken}"/><path d="M-1,-2.2 Q-0.8,-2.8 -0.6,-2.2 Q-0.4,-2.7 -0.3,-2.1" fill="${c.flag}" stroke="none"/><polygon points="-1.5,-1.5 -2,-1.3 -1.5,-1.2" fill="${c.wheat}"/></g>`;
+  return `<g transform="translate(${x},${y})"><ellipse cx="0" cy="-0.1" rx="1" ry="0.25" fill="${c.shadow}" opacity="0.1"/><ellipse cx="0" cy="-1.5" rx="1.3" ry="1.1" fill="${c.chicken}"/><path d="M1.2,-1.8 Q1.8,-2.5 1.6,-3.3 Q1.3,-2.8 1.1,-2" fill="${c.chicken}"/><ellipse cx="0.3" cy="-1.6" rx="0.6" ry="0.45" fill="${c.trunk}" opacity="0.25"/><circle cx="-1" cy="-2.4" r="0.65" fill="${c.chicken}"/><path d="M-1,-3.1 Q-0.8,-3.5 -0.7,-3 Q-0.5,-3.4 -0.4,-2.9 Q-0.2,-3.2 -0.1,-2.8" fill="${c.flag}"/><circle cx="-0.85" cy="-2.45" r="0.12" fill="#222"/><polygon points="-1.6,-2.3 -2,-2.2 -1.6,-2.1" fill="${c.wheat}"/><ellipse cx="-1.15" cy="-2" rx="0.15" ry="0.25" fill="${c.flag}"/><line x1="-0.4" y1="-0.4" x2="-0.5" y2="0.3" stroke="${c.wheat}" stroke-width="0.25"/><line x1="0.4" y1="-0.4" x2="0.5" y2="0.3" stroke="${c.wheat}" stroke-width="0.25"/><path d="M-0.7,0.3 L-0.5,0.3 L-0.3,0.3" stroke="${c.wheat}" stroke-width="0.15" fill="none"/><path d="M0.3,0.3 L0.5,0.3 L0.7,0.3" stroke="${c.wheat}" stroke-width="0.15" fill="none"/></g>`;
 }
 function svgHorse(x, y, c, v) {
   if (v === 1) {
-    return `<g transform="translate(${x},${y})"><ellipse cx="0" cy="-2.2" rx="2.5" ry="1.3" fill="${c.horse}"/><path d="M-2,-2.5 Q-2.5,-4 -2,-5" stroke="${c.horse}" fill="${c.horse}" stroke-width="1"/><ellipse cx="-1.8" cy="-5.2" rx="1" ry="0.5" fill="${c.horse}"/><line x1="-1.2" y1="-1" x2="-1.8" y2="0.3" stroke="${c.horse}" stroke-width="0.4"/><line x1="0.8" y1="-1" x2="1.5" y2="0.3" stroke="${c.horse}" stroke-width="0.4"/><path d="M2.5,-2.5 Q3.5,-3 3,-1.5" stroke="${c.horse}" fill="none" stroke-width="0.4"/></g>`;
+    return `<g transform="translate(${x},${y})"><ellipse cx="0" cy="-0.2" rx="2.5" ry="0.5" fill="${c.shadow}" opacity="0.15"/><ellipse cx="0" cy="-2.5" rx="2.5" ry="1.4" fill="${c.horse}"/><path d="M-2,-2.5 Q-2.5,-3.5 -2.2,-4.5 Q-2,-5 -1.5,-5.5" fill="${c.horse}" stroke="${c.horse}" stroke-width="1.2"/><ellipse cx="-1.2" cy="-5.8" rx="0.9" ry="0.5" fill="${c.horse}"/><path d="M-2,-3.5 Q-2.5,-4 -2.3,-4.5 Q-2,-5 -1.5,-5.3" stroke="${c.trunk}" fill="none" stroke-width="0.5"/><polygon points="-1.4,-6.3 -1.2,-6.8 -1,-6.3" fill="${c.horse}"/><circle cx="-1" cy="-5.8" r="0.12" fill="#222"/><rect x="-1.5" y="-1.3" width="0.5" height="1.8" fill="${c.horse}" transform="rotate(-20 -1.5 -1.3)"/><rect x="-0.5" y="-1.3" width="0.5" height="1.5" fill="${c.horse}" transform="rotate(15 -0.5 -1.3)"/><rect x="1" y="-1.3" width="0.5" height="1.5" fill="${c.horse}"/><rect x="1.8" y="-1.3" width="0.5" height="1.8" fill="${c.horse}" transform="rotate(-10 1.8 -1.3)"/><path d="M2.5,-2.8 Q3.5,-2.5 3.8,-1.5 Q4,-0.5 3.5,0" stroke="${c.trunk}" fill="none" stroke-width="0.5"/></g>`;
   }
   if (v === 2) {
-    return `<g transform="translate(${x},${y})"><ellipse cx="0" cy="-2.5" rx="2.3" ry="1.3" fill="${c.horse}" transform="rotate(-15)"/><path d="M-1.5,-3.5 Q-2,-5 -1.5,-6.5" stroke="${c.horse}" fill="${c.horse}" stroke-width="1"/><ellipse cx="-1.3" cy="-6.8" rx="0.9" ry="0.45" fill="${c.horse}"/><line x1="-0.5" y1="-1.5" x2="-0.8" y2="-0.2" stroke="${c.horse}" stroke-width="0.4"/><line x1="1.5" y1="-1.5" x2="1.5" y2="0" stroke="${c.horse}" stroke-width="0.4"/><path d="M2,-3 Q3,-3.5 2.5,-2" stroke="${c.horse}" fill="none" stroke-width="0.4"/></g>`;
+    return `<g transform="translate(${x},${y})"><ellipse cx="0.5" cy="-0.2" rx="1.5" ry="0.4" fill="${c.shadow}" opacity="0.15"/><ellipse cx="0" cy="-3" rx="2.2" ry="1.3" fill="${c.horse}" transform="rotate(-25 0 -3)"/><path d="M-1.5,-3.5 Q-2,-5 -1.5,-6" fill="${c.horse}" stroke="${c.horse}" stroke-width="1.1"/><ellipse cx="-1.2" cy="-6.5" rx="0.85" ry="0.5" fill="${c.horse}"/><path d="M-1.8,-4.5 Q-2.3,-5 -2,-5.8" stroke="${c.trunk}" fill="none" stroke-width="0.5"/><polygon points="-1.4,-7 -1.2,-7.5 -1,-7" fill="${c.horse}"/><rect x="-1.2" y="-2.5" width="0.45" height="1.8" fill="${c.horse}" transform="rotate(-60 -1.2 -2.5)"/><rect x="-0.3" y="-2.5" width="0.45" height="1.6" fill="${c.horse}" transform="rotate(-45 -0.3 -2.5)"/><rect x="0.8" y="-1.5" width="0.5" height="1.7" fill="${c.horse}"/><rect x="1.5" y="-1.5" width="0.5" height="1.7" fill="${c.horse}"/></g>`;
   }
-  return `<g transform="translate(${x},${y})"><ellipse cx="0" cy="-2.2" rx="2.5" ry="1.3" fill="${c.horse}"/><path d="M-2,-2.5 Q-2.5,-4 -2,-5" stroke="${c.horse}" fill="${c.horse}" stroke-width="1"/><ellipse cx="-1.8" cy="-5.2" rx="1" ry="0.5" fill="${c.horse}"/><line x1="-1" y1="-1" x2="-1" y2="0" stroke="${c.horse}" stroke-width="0.4"/><line x1="1" y1="-1" x2="1" y2="0" stroke="${c.horse}" stroke-width="0.4"/><path d="M2.5,-2.5 Q3.5,-3 3,-1.5" stroke="${c.horse}" fill="none" stroke-width="0.4"/></g>`;
+  return `<g transform="translate(${x},${y})"><ellipse cx="0" cy="-0.2" rx="2.2" ry="0.5" fill="${c.shadow}" opacity="0.15"/><ellipse cx="0" cy="-2.5" rx="2.5" ry="1.4" fill="${c.horse}"/><path d="M-2,-2.8 Q-2.3,-4 -2,-5" fill="${c.horse}" stroke="${c.horse}" stroke-width="1.2"/><ellipse cx="-1.6" cy="-5.5" rx="1" ry="0.55" fill="${c.horse}"/><ellipse cx="-2.4" cy="-5.3" rx="0.4" ry="0.3" fill="${c.horse}"/><path d="M-1.8,-3.5 Q-2.5,-4 -2.2,-4.8 Q-2,-5.3 -1.5,-5.5" stroke="${c.trunk}" fill="none" stroke-width="0.6"/><polygon points="-1.8,-6 -1.6,-6.5 -1.4,-6" fill="${c.horse}"/><polygon points="-1.3,-6 -1.1,-6.4 -0.9,-6" fill="${c.horse}"/><circle cx="-1.4" cy="-5.5" r="0.12" fill="#222"/><circle cx="-2.5" cy="-5.2" r="0.08" fill="#333"/><rect x="-1.4" y="-1.2" width="0.5" height="1.4" fill="${c.horse}"/><rect x="-0.5" y="-1.2" width="0.5" height="1.4" fill="${c.horse}"/><rect x="0.6" y="-1.2" width="0.5" height="1.4" fill="${c.horse}"/><rect x="1.5" y="-1.2" width="0.5" height="1.4" fill="${c.horse}"/><rect x="-1.45" y="0" width="0.55" height="0.25" fill="${c.trunk}"/><rect x="-0.55" y="0" width="0.55" height="0.25" fill="${c.trunk}"/><rect x="0.55" y="0" width="0.55" height="0.25" fill="${c.trunk}"/><rect x="1.45" y="0" width="0.55" height="0.25" fill="${c.trunk}"/><path d="M2.5,-2.8 Q3.2,-2.5 3,-1.5 Q2.8,-0.5 3.2,0" stroke="${c.trunk}" fill="none" stroke-width="0.6"/></g>`;
+}
+function svgDonkey(x, y, c, v) {
+  const body = c.donkey || "#808080";
+  const dark = "#505050";
+  const muzzle = "#a0a0a0";
+  if (v === 1) {
+    return `<g transform="translate(${x},${y})"><ellipse cx="0" cy="-0.2" rx="2" ry="0.4" fill="${c.shadow}" opacity="0.15"/><ellipse cx="0" cy="-2" rx="2.2" ry="1.2" fill="${body}"/><path d="M-1.5,-2.2 Q-2,-3.2 -1.6,-4" fill="${body}" stroke="${body}" stroke-width="0.9"/><ellipse cx="-1.3" cy="-4.3" rx="0.85" ry="0.5" fill="${body}"/><ellipse cx="-2" cy="-4.1" rx="0.4" ry="0.3" fill="${muzzle}"/><ellipse cx="-1.6" cy="-5.2" rx="0.2" ry="0.6" fill="${body}"/><ellipse cx="-1" cy="-5.1" rx="0.2" ry="0.55" fill="${body}"/><circle cx="-1.2" cy="-4.4" r="0.1" fill="#222"/><rect x="-1.2" y="-0.9" width="0.45" height="1.2" fill="${body}"/><rect x="-0.3" y="-0.9" width="0.45" height="1.1" fill="${body}"/><rect x="0.5" y="-0.9" width="0.45" height="1.1" fill="${body}"/><rect x="1.2" y="-0.9" width="0.45" height="1.2" fill="${body}"/><rect x="-1.25" y="0.1" width="0.5" height="0.2" fill="${dark}"/><rect x="1.15" y="0.1" width="0.5" height="0.2" fill="${dark}"/><path d="M2.2,-2.2 Q2.8,-2 2.5,-1" stroke="${dark}" fill="none" stroke-width="0.35"/></g>`;
+  }
+  return `<g transform="translate(${x},${y})"><ellipse cx="0" cy="-0.2" rx="2" ry="0.4" fill="${c.shadow}" opacity="0.15"/><ellipse cx="0" cy="-2" rx="2.2" ry="1.2" fill="${body}"/><line x1="-1" y1="-2.8" x2="1.5" y2="-2.8" stroke="${dark}" stroke-width="0.3"/><path d="M-1.5,-2.2 Q-2,-3.2 -1.6,-4" fill="${body}" stroke="${body}" stroke-width="0.9"/><ellipse cx="-1.3" cy="-4.3" rx="0.85" ry="0.5" fill="${body}"/><ellipse cx="-2" cy="-4.1" rx="0.4" ry="0.3" fill="${muzzle}"/><ellipse cx="-1.6" cy="-5.2" rx="0.2" ry="0.65" fill="${body}"/><ellipse cx="-1.6" cy="-5.2" rx="0.12" ry="0.5" fill="${muzzle}" opacity="0.5"/><ellipse cx="-1" cy="-5.1" rx="0.2" ry="0.6" fill="${body}"/><ellipse cx="-1" cy="-5.1" rx="0.12" ry="0.45" fill="${muzzle}" opacity="0.5"/><circle cx="-1.2" cy="-4.4" r="0.1" fill="#222"/><circle cx="-2.1" cy="-4" r="0.06" fill="#333"/><rect x="-1.2" y="-0.9" width="0.45" height="1.1" fill="${body}"/><rect x="-0.3" y="-0.9" width="0.45" height="1.1" fill="${body}"/><rect x="0.5" y="-0.9" width="0.45" height="1.1" fill="${body}"/><rect x="1.2" y="-0.9" width="0.45" height="1.1" fill="${body}"/><rect x="-1.25" y="0" width="0.5" height="0.2" fill="${dark}"/><rect x="-0.35" y="0" width="0.5" height="0.2" fill="${dark}"/><rect x="0.45" y="0" width="0.5" height="0.2" fill="${dark}"/><rect x="1.15" y="0" width="0.5" height="0.2" fill="${dark}"/><path d="M2.2,-2.2 Q2.8,-2 2.5,-1" stroke="${dark}" fill="none" stroke-width="0.35"/><ellipse cx="2.5" cy="-0.9" rx="0.25" ry="0.2" fill="${dark}"/></g>`;
+}
+function svgGoat(x, y, c, v) {
+  const body = c.goat || "#e8e0d0";
+  const horn = c.goatHorn || "#b0a090";
+  const dark = "#8a7a60";
+  if (v === 1) {
+    return `<g transform="translate(${x},${y})"><ellipse cx="0" cy="-0.2" rx="1.5" ry="0.35" fill="${c.shadow}" opacity="0.15"/><ellipse cx="0" cy="-1.8" rx="2" ry="1.1" fill="${body}"/><ellipse cx="-2" cy="-1.2" rx="0.65" ry="0.5" fill="${body}"/><path d="M-2.3,-1.5 Q-2.8,-2.2 -2.5,-2.8" stroke="${horn}" fill="none" stroke-width="0.25"/><path d="M-1.8,-1.5 Q-1.3,-2.2 -1.6,-2.6" stroke="${horn}" fill="none" stroke-width="0.25"/><path d="M-2.4,-1 Q-2.6,-0.5 -2.4,-0.2" stroke="${dark}" fill="none" stroke-width="0.2"/><circle cx="-1.9" cy="-1.3" r="0.08" fill="#222"/><rect x="-0.8" y="-0.8" width="0.4" height="1" fill="${body}"/><rect x="0.5" y="-0.8" width="0.4" height="1" fill="${body}"/><ellipse cx="2" cy="-2" rx="0.3" ry="0.2" fill="${body}"/></g>`;
+  }
+  if (v === 2) {
+    const brownBody = "#c0a880";
+    return `<g transform="translate(${x},${y})"><ellipse cx="0" cy="-0.2" rx="1.5" ry="0.35" fill="${c.shadow}" opacity="0.15"/><ellipse cx="0" cy="-1.8" rx="2" ry="1.1" fill="${brownBody}"/><path d="M-1.5,-2 Q-1.8,-2.8 -1.5,-3.2" fill="${brownBody}" stroke="${brownBody}" stroke-width="0.6"/><ellipse cx="-1.3" cy="-3.5" rx="0.6" ry="0.45" fill="${brownBody}"/><path d="M-1.6,-3.8 Q-2,-4.5 -1.7,-5" stroke="${horn}" fill="none" stroke-width="0.25"/><path d="M-1.1,-3.8 Q-0.7,-4.5 -1,-4.9" stroke="${horn}" fill="none" stroke-width="0.25"/><ellipse cx="-0.85" cy="-3.6" rx="0.3" ry="0.15" fill="${brownBody}" transform="rotate(20 -0.85 -3.6)"/><path d="M-1.6,-3.3 Q-1.8,-2.8 -1.6,-2.4" stroke="${dark}" fill="none" stroke-width="0.2"/><circle cx="-1.15" cy="-3.55" r="0.08" fill="#222"/><rect x="-1" y="-0.8" width="0.4" height="1" fill="${brownBody}"/><rect x="-0.2" y="-0.8" width="0.4" height="1" fill="${brownBody}"/><rect x="0.5" y="-0.8" width="0.4" height="1" fill="${brownBody}"/><rect x="1.1" y="-0.8" width="0.4" height="1" fill="${brownBody}"/></g>`;
+  }
+  return `<g transform="translate(${x},${y})"><ellipse cx="0" cy="-0.2" rx="1.5" ry="0.35" fill="${c.shadow}" opacity="0.15"/><ellipse cx="0" cy="-1.8" rx="2" ry="1.1" fill="${body}"/><path d="M-1.5,-2 Q-1.8,-2.8 -1.5,-3.2" fill="${body}" stroke="${body}" stroke-width="0.6"/><ellipse cx="-1.3" cy="-3.5" rx="0.6" ry="0.45" fill="${body}"/><path d="M-1.6,-3.8 Q-2,-4.5 -1.7,-5" stroke="${horn}" fill="none" stroke-width="0.25"/><path d="M-1.1,-3.8 Q-0.7,-4.5 -1,-4.9" stroke="${horn}" fill="none" stroke-width="0.25"/><ellipse cx="-0.85" cy="-3.6" rx="0.3" ry="0.15" fill="${body}" transform="rotate(20 -0.85 -3.6)"/><path d="M-1.6,-3.3 Q-1.9,-2.8 -1.7,-2.3" stroke="${dark}" fill="none" stroke-width="0.2"/><path d="M-1.5,-3.2 Q-1.7,-2.7 -1.5,-2.2" stroke="${dark}" fill="none" stroke-width="0.15"/><ellipse cx="-1.15" cy="-3.55" rx="0.1" ry="0.06" fill="#222"/><ellipse cx="-1.7" cy="-3.35" rx="0.25" ry="0.18" fill="${horn}" opacity="0.5"/><rect x="-1" y="-0.8" width="0.4" height="1" fill="${body}"/><rect x="-0.2" y="-0.8" width="0.4" height="1" fill="${body}"/><rect x="0.5" y="-0.8" width="0.4" height="1" fill="${body}"/><rect x="1.1" y="-0.8" width="0.4" height="1" fill="${body}"/><rect x="-1.05" y="0" width="0.45" height="0.2" fill="${dark}"/><rect x="-0.25" y="0" width="0.45" height="0.2" fill="${dark}"/><rect x="0.45" y="0" width="0.45" height="0.2" fill="${dark}"/><rect x="1.05" y="0" width="0.45" height="0.2" fill="${dark}"/><path d="M2,-2 Q2.3,-2.3 2.2,-2.6" stroke="${body}" fill="none" stroke-width="0.25"/></g>`;
 }
 function svgRicePaddy(x, y, c, v) {
   return `<g transform="translate(${x},${y})"><polygon points="-4,-1 0,-3 4,-1 0,1" fill="${c.ricePaddy}" stroke="${c.ricePaddy}" stroke-width="0.3"/><polygon points="-3,-0.8 0,-2.4 3,-0.8 0,0.6" fill="${c.ricePaddyWater}" opacity="0.6"/><line x1="-1.5" y1="-0.6" x2="1.5" y2="-1.8" stroke="#fff" stroke-width="0.2" opacity="0.25"/><line x1="-1" y1="0" x2="2" y2="-1.2" stroke="#fff" stroke-width="0.2" opacity="0.2"/><line x1="-2" y1="-0.3" x2="1" y2="-1.5" stroke="#fff" stroke-width="0.2" opacity="0.15"/><line x1="-2.5" y1="-0.5" x2="-2.5" y2="-2" stroke="${c.reeds}" stroke-width="0.3"/><line x1="-0.8" y1="-1.8" x2="-0.8" y2="-3.3" stroke="${c.reeds}" stroke-width="0.3"/><line x1="1" y1="-1.5" x2="1" y2="-3" stroke="${c.reeds}" stroke-width="0.3"/><line x1="2.5" y1="-0.5" x2="2.5" y2="-2" stroke="${c.reeds}" stroke-width="0.3"/></g>`;
@@ -2293,7 +2788,7 @@ function svgWindmill(x, y, c, v) {
   return `<g transform="translate(${x},${y})"><polygon points="-1.5,0 1.5,0 1,-7 -1,-7" fill="${c.windmill}"/><g><line x1="0" y1="-11" x2="0" y2="-3" stroke="${c.windBlade}" stroke-width="0.5"/><line x1="-4" y1="-7" x2="4" y2="-7" stroke="${c.windBlade}" stroke-width="0.5"/><animateTransform attributeName="transform" type="rotate" from="0 0 -7" to="360 0 -7" dur="8s" repeatCount="indefinite"/></g><circle cx="0" cy="-7" r="0.7" fill="${c.roofA}"/></g>`;
 }
 function svgWell(x, y, c, v) {
-  return `<g transform="translate(${x},${y})"><ellipse cx="0" cy="-0.5" rx="2" ry="1" fill="${c.well}" stroke="${c.fence}" stroke-width="0.3"/><line x1="-1.5" y1="-0.5" x2="-1.5" y2="-4" stroke="${c.trunk}" stroke-width="0.4"/><line x1="1.5" y1="-0.5" x2="1.5" y2="-4" stroke="${c.trunk}" stroke-width="0.4"/><polygon points="0,-5.5 -2.2,-3.8 2.2,-3.8" fill="${c.roofB}"/></g>`;
+  return `<g transform="translate(${x},${y})"><ellipse cx="0" cy="-0.3" rx="2.3" ry="1.2" fill="${c.rock}"/><ellipse cx="0" cy="-0.6" rx="2.1" ry="1" fill="${c.well}" stroke="${c.boulder}" stroke-width="0.3"/><ellipse cx="-1.2" cy="-0.5" rx="0.5" ry="0.25" fill="${c.boulder}" opacity="0.6"/><ellipse cx="0.8" cy="-0.4" rx="0.6" ry="0.3" fill="${c.boulder}" opacity="0.5"/><ellipse cx="-0.2" cy="-0.7" rx="0.4" ry="0.2" fill="${c.rock}" opacity="0.4"/><ellipse cx="0" cy="-0.6" rx="1.4" ry="0.6" fill="${c.shadow}" opacity="0.8"/><rect x="-1.7" y="-4.2" width="0.4" height="3.7" fill="${c.trunk}"/><rect x="1.3" y="-4.2" width="0.4" height="3.7" fill="${c.trunk}"/><rect x="-1.8" y="-4.4" width="3.6" height="0.35" fill="${c.trunk}"/><polygon points="0,-5.8 -2.5,-4.2 2.5,-4.2" fill="${c.roofB}"/><line x1="0" y1="-5.8" x2="-2.5" y2="-4.2" stroke="${c.shadow}" stroke-width="0.15" opacity="0.3"/><ellipse cx="0" cy="-4" rx="0.5" ry="0.2" fill="${c.fence}"/><rect x="-0.5" y="-4.2" width="1" height="0.4" fill="${c.fence}"/><path d="M0,-4 Q0.3,-3 0,-2 Q-0.2,-1.5 0,-1" stroke="${c.fence}" stroke-width="0.15" fill="none"/><path d="M-0.35,-1.3 L-0.3,-0.6 L0.3,-0.6 L0.35,-1.3 Z" fill="${c.barrel}"/><ellipse cx="0" cy="-1.3" rx="0.35" ry="0.12" fill="${c.cart}"/></g>`;
 }
 function svgMarket(x, y, c, v) {
   if (v === 1) {
@@ -2329,7 +2824,7 @@ function svgCart(x, y, c, v) {
   return `<g transform="translate(${x},${y})"><rect x="-2" y="-2" width="3.5" height="2" fill="${c.cart}"/><circle cx="-1.5" cy="0" r="0.8" fill="${c.trunk}" stroke="${c.fence}" stroke-width="0.2"/><circle cx="1" cy="0" r="0.8" fill="${c.trunk}" stroke="${c.fence}" stroke-width="0.2"/><line x1="2" y1="-1" x2="3.5" y2="-0.5" stroke="${c.trunk}" stroke-width="0.4"/></g>`;
 }
 function svgBarrel(x, y, c, v) {
-  return `<g transform="translate(${x},${y})"><ellipse cx="0" cy="-0.3" rx="1.2" ry="0.5" fill="${c.barrel}"/><rect x="-1.2" y="-2.5" width="2.4" height="2.2" fill="${c.barrel}" rx="0.3"/><ellipse cx="0" cy="-2.5" rx="1.2" ry="0.5" fill="${c.cart}"/></g>`;
+  return `<g transform="translate(${x},${y})"><ellipse cx="0" cy="-0.1" rx="1.4" ry="0.6" fill="${c.shadow}" opacity="0.2"/><ellipse cx="0" cy="-0.3" rx="1.3" ry="0.55" fill="${c.barrel}"/><rect x="-1.3" y="-2.6" width="2.6" height="2.3" fill="${c.barrel}" rx="0.2"/><line x1="-0.6" y1="-2.5" x2="-0.6" y2="-0.4" stroke="${c.trunk}" stroke-width="0.1" opacity="0.3"/><line x1="0.2" y1="-2.5" x2="0.2" y2="-0.4" stroke="${c.trunk}" stroke-width="0.1" opacity="0.3"/><line x1="0.9" y1="-2.5" x2="0.9" y2="-0.4" stroke="${c.trunk}" stroke-width="0.1" opacity="0.25"/><ellipse cx="0" cy="-0.6" rx="1.35" ry="0.25" fill="none" stroke="${c.shadow}" stroke-width="0.25"/><ellipse cx="0" cy="-1.5" rx="1.35" ry="0.25" fill="none" stroke="${c.shadow}" stroke-width="0.25"/><ellipse cx="0" cy="-2.4" rx="1.35" ry="0.25" fill="none" stroke="${c.shadow}" stroke-width="0.25"/><ellipse cx="0" cy="-2.6" rx="1.3" ry="0.55" fill="${c.cart}"/><ellipse cx="0" cy="-2.6" rx="0.9" ry="0.35" fill="${c.barrel}" opacity="0.7"/></g>`;
 }
 function svgTorch(x, y, c, v) {
   if (v === 1) {
@@ -2514,6 +3009,63 @@ function svgHaystack(x, y, c, v) {
 function svgOrchard(x, y, c, v) {
   return `<g transform="translate(${x},${y})"><line x1="0" y1="0" x2="0" y2="-3" stroke="${c.trunk}" stroke-width="0.6"/><circle cx="0" cy="-5" r="2.5" fill="${c.orchard}"/><circle cx="-1" cy="-4.5" r="0.35" fill="${c.orchardFruit}"/><circle cx="0.8" cy="-5.2" r="0.35" fill="${c.orchardFruit}"/><circle cx="0" cy="-3.8" r="0.3" fill="${c.orchardFruit}"/></g>`;
 }
+function svgAppleTree(x, y, c, v) {
+  const leaf = c.orchard;
+  const apple = c.appleRed || "#c41e3a";
+  const trunk = c.trunk;
+  if (v === 1) {
+    return `<g transform="translate(${x},${y})"><rect x="-0.5" y="-1" width="1" height="3" fill="${trunk}"/><circle cx="0" cy="-4.5" r="2.5" fill="${leaf}"/><circle cx="-1.5" cy="-3.5" r="1.5" fill="${leaf}" opacity="0.9"/><circle cx="1.5" cy="-3.5" r="1.5" fill="${leaf}" opacity="0.85"/><circle cx="-1" cy="-4" r="0.35" fill="${apple}"/><circle cx="0.5" cy="-5" r="0.35" fill="${apple}"/><circle cx="1.2" cy="-4" r="0.3" fill="${apple}"/><circle cx="-0.3" cy="-3.5" r="0.3" fill="${apple}"/><circle cx="0" cy="-5.5" r="0.3" fill="${apple}"/></g>`;
+  }
+  if (v === 2) {
+    return `<g transform="translate(${x},${y})"><rect x="-0.5" y="-1" width="1" height="3" fill="${trunk}"/><circle cx="0" cy="-4.5" r="2.3" fill="${leaf}"/><circle cx="-1.2" cy="-3.5" r="1.3" fill="${leaf}" opacity="0.9"/><circle cx="1.2" cy="-3.5" r="1.3" fill="${leaf}" opacity="0.85"/><circle cx="-0.5" cy="-4.5" r="0.3" fill="${apple}"/><circle cx="0.8" cy="-4" r="0.3" fill="${apple}"/><circle cx="-1.5" cy="0.3" r="0.25" fill="${apple}" opacity="0.8"/><circle cx="0.8" cy="0.5" r="0.25" fill="${apple}" opacity="0.75"/></g>`;
+  }
+  return `<g transform="translate(${x},${y})"><rect x="-0.5" y="-1" width="1" height="3" fill="${trunk}"/><circle cx="0" cy="-4.5" r="2.5" fill="${leaf}"/><circle cx="-1.5" cy="-3.5" r="1.5" fill="${leaf}" opacity="0.9"/><circle cx="1.5" cy="-3.5" r="1.5" fill="${leaf}" opacity="0.85"/><circle cx="-1" cy="-4.2" r="0.35" fill="${apple}"/><circle cx="0.6" cy="-5" r="0.35" fill="${apple}"/><circle cx="0" cy="-3.8" r="0.3" fill="${apple}"/></g>`;
+}
+function svgOliveTree(x, y, c, v) {
+  const leaf = c.oliveGreen || "#808060";
+  const fruit = c.oliveFruit || "#4a4a30";
+  const trunk = c.trunk;
+  if (v === 1) {
+    return `<g transform="translate(${x},${y})"><path d="M-0.3,2 Q-0.8,0 -0.5,-1 Q-0.2,-2 0,-2" stroke="${trunk}" fill="none" stroke-width="0.8"/><path d="M0.3,2 Q0.8,0 0.5,-1 Q0.2,-2 0,-2" stroke="${trunk}" fill="none" stroke-width="0.8"/><ellipse cx="0" cy="-4" rx="2.5" ry="1.8" fill="${leaf}" opacity="0.7"/><ellipse cx="-1.5" cy="-3.5" rx="1.2" ry="0.9" fill="${leaf}" opacity="0.6"/><ellipse cx="1.5" cy="-3.5" rx="1.2" ry="0.9" fill="${leaf}" opacity="0.55"/><circle cx="-0.8" cy="-3.8" r="0.2" fill="${fruit}"/><circle cx="0.5" cy="-4.2" r="0.2" fill="${fruit}"/><circle cx="1" cy="-3.5" r="0.18" fill="${fruit}"/></g>`;
+  }
+  return `<g transform="translate(${x},${y})"><rect x="-0.4" y="-1" width="0.8" height="3" fill="${trunk}"/><ellipse cx="0" cy="-3.5" rx="2.2" ry="1.6" fill="${leaf}" opacity="0.7"/><ellipse cx="-1.2" cy="-3" rx="1" ry="0.8" fill="${leaf}" opacity="0.6"/><ellipse cx="1.2" cy="-3" rx="1" ry="0.8" fill="${leaf}" opacity="0.55"/><circle cx="-0.5" cy="-3.5" r="0.18" fill="${fruit}"/><circle cx="0.6" cy="-3.8" r="0.18" fill="${fruit}"/></g>`;
+}
+function svgLemonTree(x, y, c, v) {
+  const leaf = c.palm;
+  const lemon = c.lemonYellow || "#fff44f";
+  const trunk = c.trunk;
+  if (v === 1) {
+    return `<g transform="translate(${x},${y})"><rect x="-0.4" y="-1" width="0.8" height="2.5" fill="${trunk}"/><circle cx="0" cy="-3.5" r="2" fill="${leaf}"/><circle cx="-1" cy="-2.8" r="1.2" fill="${leaf}" opacity="0.9"/><circle cx="1" cy="-2.8" r="1.2" fill="${leaf}" opacity="0.85"/><ellipse cx="-0.8" cy="-3.5" rx="0.35" ry="0.25" fill="${lemon}"/><ellipse cx="0.5" cy="-4" rx="0.35" ry="0.25" fill="${lemon}"/><ellipse cx="0.8" cy="-3" rx="0.3" ry="0.22" fill="${lemon}"/><ellipse cx="-0.2" cy="-2.8" rx="0.3" ry="0.22" fill="${lemon}"/></g>`;
+  }
+  return `<g transform="translate(${x},${y})"><rect x="-0.4" y="-1" width="0.8" height="2.5" fill="${trunk}"/><circle cx="0" cy="-3.5" r="2" fill="${leaf}"/><circle cx="-1" cy="-2.8" r="1.2" fill="${leaf}" opacity="0.9"/><circle cx="1" cy="-2.8" r="1.2" fill="${leaf}" opacity="0.85"/><ellipse cx="-0.5" cy="-3.5" rx="0.3" ry="0.22" fill="${lemon}"/><ellipse cx="0.6" cy="-3.8" rx="0.3" ry="0.22" fill="${lemon}"/></g>`;
+}
+function svgOrangeTree(x, y, c, v) {
+  const leaf = c.orchard;
+  const orange = c.orangeFruit || "#ff8c00";
+  const trunk = c.trunk;
+  if (v === 1) {
+    return `<g transform="translate(${x},${y})"><rect x="-0.5" y="-1" width="1" height="3" fill="${trunk}"/><circle cx="0" cy="-4.2" r="2.3" fill="${leaf}"/><circle cx="-1.3" cy="-3.2" r="1.3" fill="${leaf}" opacity="0.9"/><circle cx="1.3" cy="-3.2" r="1.3" fill="${leaf}" opacity="0.85"/><circle cx="-0.8" cy="-4" r="0.4" fill="${orange}"/><circle cx="0.5" cy="-4.5" r="0.35" fill="${orange}"/><circle cx="1" cy="-3.5" r="0.35" fill="${orange}"/><circle cx="-0.2" cy="-3.2" r="0.3" fill="${orange}"/></g>`;
+  }
+  return `<g transform="translate(${x},${y})"><rect x="-0.5" y="-1" width="1" height="3" fill="${trunk}"/><circle cx="0" cy="-4.2" r="2.3" fill="${leaf}"/><circle cx="-1.3" cy="-3.2" r="1.3" fill="${leaf}" opacity="0.9"/><circle cx="1.3" cy="-3.2" r="1.3" fill="${leaf}" opacity="0.85"/><circle cx="-0.6" cy="-4" r="0.4" fill="${orange}"/><circle cx="0.7" cy="-4.3" r="0.35" fill="${orange}"/></g>`;
+}
+function svgPearTree(x, y, c, v) {
+  const leaf = c.orchard;
+  const pear = c.pearGreen || "#d1e231";
+  const trunk = c.trunk;
+  if (v === 1) {
+    return `<g transform="translate(${x},${y})"><rect x="-0.5" y="-1" width="1" height="3" fill="${trunk}"/><circle cx="0" cy="-4.5" r="2.5" fill="${leaf}"/><circle cx="-1.5" cy="-3.5" r="1.5" fill="${leaf}" opacity="0.9"/><circle cx="1.5" cy="-3.5" r="1.5" fill="${leaf}" opacity="0.85"/><path d="M-0.8,-4.3 Q-0.8,-4.8 -0.6,-4.8 Q-0.4,-4.8 -0.4,-4.3 Q-0.4,-3.8 -0.6,-3.6 Q-0.8,-3.8 -0.8,-4.3" fill="${pear}"/><path d="M0.6,-4.8 Q0.6,-5.3 0.8,-5.3 Q1,-5.3 1,-4.8 Q1,-4.3 0.8,-4.1 Q0.6,-4.3 0.6,-4.8" fill="${pear}"/><path d="M0.3,-3.5 Q0.3,-4 0.5,-4 Q0.7,-4 0.7,-3.5 Q0.7,-3 0.5,-2.8 Q0.3,-3 0.3,-3.5" fill="${pear}"/></g>`;
+  }
+  return `<g transform="translate(${x},${y})"><rect x="-0.5" y="-1" width="1" height="3" fill="${trunk}"/><circle cx="0" cy="-4.5" r="2.5" fill="${leaf}"/><circle cx="-1.5" cy="-3.5" r="1.5" fill="${leaf}" opacity="0.9"/><circle cx="1.5" cy="-3.5" r="1.5" fill="${leaf}" opacity="0.85"/><path d="M-0.6,-4.5 Q-0.6,-5 -0.4,-5 Q-0.2,-5 -0.2,-4.5 Q-0.2,-4 -0.4,-3.8 Q-0.6,-4 -0.6,-4.5" fill="${pear}"/><path d="M0.7,-4 Q0.7,-4.5 0.9,-4.5 Q1.1,-4.5 1.1,-4 Q1.1,-3.5 0.9,-3.3 Q0.7,-3.5 0.7,-4" fill="${pear}"/></g>`;
+}
+function svgPeachTree(x, y, c, v) {
+  const leaf = c.orchard;
+  const peach = c.peachFruit || "#ffcba4";
+  const trunk = c.trunk;
+  if (v === 1) {
+    return `<g transform="translate(${x},${y})"><rect x="-0.5" y="-1" width="1" height="3" fill="${trunk}"/><circle cx="0" cy="-4" r="2.2" fill="${leaf}"/><circle cx="-1.2" cy="-3.2" r="1.3" fill="${leaf}" opacity="0.9"/><circle cx="1.2" cy="-3.2" r="1.3" fill="${leaf}" opacity="0.85"/><circle cx="-0.6" cy="-4" r="0.4" fill="${peach}"/><circle cx="0.5" cy="-4.3" r="0.35" fill="${peach}"/><circle cx="0.8" cy="-3.3" r="0.35" fill="${peach}"/></g>`;
+  }
+  return `<g transform="translate(${x},${y})"><rect x="-0.5" y="-1" width="1" height="3" fill="${trunk}"/><circle cx="0" cy="-4" r="2.2" fill="${leaf}"/><circle cx="-1.2" cy="-3.2" r="1.3" fill="${leaf}" opacity="0.9"/><circle cx="1.2" cy="-3.2" r="1.3" fill="${leaf}" opacity="0.85"/><circle cx="-0.5" cy="-4" r="0.35" fill="${peach}"/><circle cx="0.6" cy="-4.2" r="0.35" fill="${peach}"/></g>`;
+}
 function svgBeeFarm(x, y, c, v) {
   return `<g transform="translate(${x},${y})"><rect x="-1.5" y="-2.5" width="3" height="2.5" fill="${c.beeFarm}"/><rect x="-1.5" y="-2.5" width="3" height="0.8" fill="${c.beeFarm}" stroke="${c.trunk}" stroke-width="0.2"/><rect x="-1.5" y="-1.7" width="3" height="0.8" fill="${c.beeFarm}" stroke="${c.trunk}" stroke-width="0.2"/><polygon points="-1.5,-2.5 0,-3.5 1.5,-2.5" fill="${c.roofB}"/></g>`;
 }
@@ -2586,13 +3138,14 @@ function svgCampfire(x, y, c, v) {
 function svgSnowPine(x, y, c, v) {
   const snow = c.snowCap;
   const trunk = c.trunk;
+  const icicle = c.icicleBlue || "#d0e8f8";
   if (v === 1) {
-    return `<g transform="translate(${x},${y})"><rect x="-0.5" y="-1" width="1" height="3" fill="${trunk}"/><polygon points="0,-8 -3,-2 3,-2" fill="${c.pine}" opacity="0.6"/><polygon points="0,-8 -3,-2 3,-2" fill="${snow}" opacity="0.55"/><polygon points="0,-6 -2.5,-1.5 2.5,-1.5" fill="${snow}" opacity="0.6"/><ellipse cx="0" cy="-8" rx="1.5" ry="0.5" fill="${snow}"/></g>`;
+    return `<g transform="translate(${x},${y})"><rect x="-0.5" y="-1" width="1" height="3" fill="${trunk}"/><polygon points="0,-8 -3,-2 3,-2" fill="${c.pine}" opacity="0.6"/><polygon points="0,-8 -3,-2 3,-2" fill="${snow}" opacity="0.55"/><polygon points="0,-6 -2.5,-1.5 2.5,-1.5" fill="${snow}" opacity="0.6"/><ellipse cx="0" cy="-8" rx="1.5" ry="0.5" fill="${snow}"/><line x1="-2" y1="-3" x2="-2" y2="-2" stroke="${icicle}" stroke-width="0.12"/><line x1="-1" y1="-4" x2="-1" y2="-3" stroke="${icicle}" stroke-width="0.1"/><line x1="1.5" y1="-3.5" x2="1.5" y2="-2.5" stroke="${icicle}" stroke-width="0.12"/></g>`;
   }
   if (v === 2) {
-    return `<g transform="translate(${x},${y})"><rect x="-0.5" y="-1" width="1" height="3" fill="${trunk}"/><polygon points="0,-7.5 -3.5,-1 3.5,-1" fill="${c.ice}" opacity="0.5"/><polygon points="0,-7.5 -2.5,-2.5 2.5,-2.5" fill="${snow}" opacity="0.4"/><ellipse cx="0" cy="-7.5" rx="1.2" ry="0.4" fill="${snow}"/></g>`;
+    return `<g transform="translate(${x},${y})"><rect x="-0.5" y="-1" width="1" height="3" fill="${trunk}"/><polygon points="0,-7.5 -3.5,-1 3.5,-1" fill="${c.ice}" opacity="0.5"/><polygon points="0,-6 -2.5,-2 2.5,-2" fill="${c.pine}" opacity="0.4"/><polygon points="0,-7.5 -2.5,-2.5 2.5,-2.5" fill="${snow}" opacity="0.45"/><ellipse cx="0" cy="-7.5" rx="1.2" ry="0.4" fill="${snow}"/><ellipse cx="-2" cy="-2.5" rx="0.8" ry="0.25" fill="${snow}" opacity="0.5"/><ellipse cx="2" cy="-2.5" rx="0.8" ry="0.25" fill="${snow}" opacity="0.5"/></g>`;
   }
-  return `<g transform="translate(${x},${y})"><rect x="-0.5" y="-1" width="1" height="3" fill="${trunk}"/><polygon points="0,-7 -3,-1 3,-1" fill="${c.pine}"/><polygon points="0,-7 -1.5,-4 1.5,-4" fill="${snow}" opacity="0.45"/><ellipse cx="0.5" cy="-6" rx="1" ry="0.3" fill="${snow}" opacity="0.5"/></g>`;
+  return `<g transform="translate(${x},${y})"><rect x="-0.5" y="-1" width="1" height="3" fill="${trunk}"/><polygon points="0,-7 -3,-1 3,-1" fill="${c.pine}"/><polygon points="0,-7 -1.5,-4 1.5,-4" fill="${snow}" opacity="0.45"/><ellipse cx="0.5" cy="-6" rx="1" ry="0.3" fill="${snow}" opacity="0.5"/><ellipse cx="-1.5" cy="-3" rx="0.7" ry="0.25" fill="${snow}" opacity="0.4"/><line x1="-2" y1="-2.5" x2="-2" y2="-1.8" stroke="${icicle}" stroke-width="0.08" opacity="0.7"/><line x1="2" y1="-2.5" x2="2" y2="-1.8" stroke="${icicle}" stroke-width="0.08" opacity="0.7"/></g>`;
 }
 function svgSnowDeciduous(x, y, c, v) {
   const branch = c.bareBranch;
@@ -2617,6 +3170,66 @@ function svgSnowman(x, y, c, v) {
     return `<g transform="translate(${x},${y})"><ellipse cx="0" cy="0.5" rx="2.8" ry="1.5" fill="${body}"/><circle cx="0" cy="-1.5" r="1.8" fill="${body}"/><circle cx="0" cy="-3.2" r="1" fill="${body}"/><circle cx="-0.3" cy="-3.4" r="0.15" fill="${coal}"/><circle cx="0.3" cy="-3.4" r="0.15" fill="${coal}"/><polygon points="0,-3.2 1,-3 0,-2.9" fill="${carrot}"/><ellipse cx="0" cy="1.5" rx="3" ry="0.5" fill="${c.ice}" opacity="0.3"/></g>`;
   }
   return `<g transform="translate(${x},${y})"><circle cx="0" cy="0" r="2" fill="${body}"/><circle cx="0" cy="-2.5" r="1.5" fill="${body}"/><circle cx="0" cy="-4.3" r="1" fill="${body}"/><circle cx="-0.35" cy="-4.5" r="0.18" fill="${coal}"/><circle cx="0.35" cy="-4.5" r="0.18" fill="${coal}"/><polygon points="0,-4.3 1.2,-4.1 0,-4" fill="${carrot}"/><circle cx="0" cy="-2.2" r="0.15" fill="${coal}"/><circle cx="0" cy="-2.7" r="0.15" fill="${coal}"/><rect x="-1" y="-3.2" width="2" height="0.35" rx="0.15" fill="${scarf}"/><rect x="-1.2" y="-5.5" width="2.4" height="0.5" fill="${coal}"/><rect x="-0.8" y="-6" width="1.6" height="0.6" fill="${coal}"/></g>`;
+}
+function svgHouseWinter(x, y, c, v) {
+  const snow = c.snowCap;
+  const warmGlow = "#ffa040";
+  if (v === 1) {
+    return `<g transform="translate(${x},${y})"><polygon points="-2.5,0 0,1.2 2.5,0 2.5,-3 0,-1.8 -2.5,-3" fill="${c.wall}"/><polygon points="-2.5,0 0,1.2 0,-1.8 -2.5,-3" fill="${c.wallShade}"/><polygon points="0,-6 -3.2,-2.8 0,-1.5 3.2,-2.8" fill="${c.roofA}"/><polygon points="0,-6.3 -3.4,-2.6 -3.2,-2.8 0,-6" fill="${snow}" opacity="0.9"/><polygon points="0,-6.3 3.4,-2.6 3.2,-2.8 0,-6" fill="${snow}" opacity="0.85"/><rect x="1" y="-6.5" width="1" height="2" fill="${c.chimney}"/><ellipse cx="1.5" cy="-6.8" rx="0.6" ry="0.25" fill="${snow}"/><line x1="-2.8" y1="-2.5" x2="-2.8" y2="-1.8" stroke="${c.icicleBlue || "#d0e8f8"}" stroke-width="0.15"/><line x1="-2.2" y1="-2.3" x2="-2.2" y2="-1.5" stroke="${c.icicleBlue || "#d0e8f8"}" stroke-width="0.12"/><line x1="2.5" y1="-2.4" x2="2.5" y2="-1.6" stroke="${c.icicleBlue || "#d0e8f8"}" stroke-width="0.15"/><rect x="-1" y="-1.5" width="0.6" height="0.6" fill="${warmGlow}" opacity="0.6"/></g>`;
+  }
+  if (v === 2) {
+    return `<g transform="translate(${x},${y})"><polygon points="-2.5,0 0,1.2 2.5,0 2.5,-3 0,-1.8 -2.5,-3" fill="${c.wall}"/><polygon points="-2.5,0 0,1.2 0,-1.8 -2.5,-3" fill="${c.wallShade}"/><polygon points="0,-6 -3.2,-2.8 0,-1.5 3.2,-2.8" fill="${c.roofA}"/><polygon points="0,-6.5 -3.5,-2.5 -3.2,-2.8 0,-6" fill="${snow}"/><polygon points="0,-6.5 3.5,-2.5 3.2,-2.8 0,-6" fill="${snow}" opacity="0.95"/><ellipse cx="-2" cy="-2.6" rx="0.8" ry="0.3" fill="${snow}"/><ellipse cx="2" cy="-2.6" rx="0.8" ry="0.3" fill="${snow}"/><rect x="1" y="-6.5" width="1" height="2" fill="${c.chimney}"/><ellipse cx="1.5" cy="-6.8" rx="0.8" ry="0.35" fill="${snow}"/></g>`;
+  }
+  return `<g transform="translate(${x},${y})"><polygon points="-2.5,0 0,1.2 2.5,0 2.5,-3 0,-1.8 -2.5,-3" fill="${c.wall}"/><polygon points="-2.5,0 0,1.2 0,-1.8 -2.5,-3" fill="${c.wallShade}"/><polygon points="0,-6 -3.2,-2.8 0,-1.5 3.2,-2.8" fill="${c.roofA}"/><polygon points="0,-6.2 -3.3,-2.7 -3.2,-2.8 0,-6" fill="${snow}" opacity="0.85"/><polygon points="0,-6.2 3.3,-2.7 3.2,-2.8 0,-6" fill="${snow}" opacity="0.8"/><rect x="1" y="-6.5" width="1" height="2" fill="${c.chimney}"/><ellipse cx="1.5" cy="-6.7" rx="0.5" ry="0.2" fill="${snow}"/><rect x="-0.8" y="-1.3" width="0.5" height="0.5" fill="${warmGlow}" opacity="0.5"/></g>`;
+}
+function svgHouseBWinter(x, y, c, v) {
+  return svgHouseWinter(x, y, c, v);
+}
+function svgBarnWinter(x, y, c, v) {
+  const snow = c.snowCap;
+  if (v === 1) {
+    return `<g transform="translate(${x},${y})"><polygon points="-4,0 0,2 4,0 4,-4.5 0,-2.5 -4,-4.5" fill="${c.roofA}" opacity="0.9"/><polygon points="-4,0 0,2 0,-2.5 -4,-4.5" fill="${c.wallShade}"/><polygon points="0,-7.5 -4.5,-4 0,-2.2 4.5,-4" fill="${c.roofA}"/><polygon points="0,-7.8 -4.7,-3.8 -4.5,-4 0,-7.5" fill="${snow}"/><polygon points="0,-7.8 4.7,-3.8 4.5,-4 0,-7.5" fill="${snow}" opacity="0.95"/><ellipse cx="-3.5" cy="-4" rx="1" ry="0.35" fill="${snow}"/><ellipse cx="3.5" cy="-4" rx="1" ry="0.35" fill="${snow}"/><rect x="-0.5" y="-1.5" width="1" height="1.5" fill="${c.trunk}" opacity="0.5"/></g>`;
+  }
+  return `<g transform="translate(${x},${y})"><polygon points="-3,0 0,1.5 3,0 3,-3.5 0,-2 -3,-3.5" fill="${c.roofA}" opacity="0.8"/><polygon points="-3,0 0,1.5 0,-2 -3,-3.5" fill="${c.wallShade}"/><polygon points="0,-6 -3.5,-3.2 0,-1.8 3.5,-3.2" fill="${c.roofA}"/><polygon points="0,-6.3 -3.7,-3 -3.5,-3.2 0,-6" fill="${snow}"/><polygon points="0,-6.3 3.7,-3 3.5,-3.2 0,-6" fill="${snow}" opacity="0.9"/><ellipse cx="0" cy="-6" rx="0.5" ry="0.2" fill="${snow}"/></g>`;
+}
+function svgChurchWinter(x, y, c, v) {
+  const snow = c.snowCap;
+  if (v === 1) {
+    return `<g transform="translate(${x},${y})"><polygon points="-2,0 0,1 2,0 2,-5 0,-4 -2,-5" fill="${c.church}"/><polygon points="-2,0 0,1 0,-4 -2,-5" fill="${c.wallShade}"/><rect x="-1" y="-8.5" width="2" height="3.5" fill="${c.church}"/><polygon points="-1.3,-8.5 0,-10.5 1.3,-8.5" fill="${c.roofA}"/><polygon points="-1.4,-8.3 0,-10.8 0,-10.5 -1.3,-8.5" fill="${snow}"/><polygon points="1.4,-8.3 0,-10.8 0,-10.5 1.3,-8.5" fill="${snow}" opacity="0.9"/><ellipse cx="0" cy="-8.5" rx="1.2" ry="0.3" fill="${snow}"/><circle cx="0" cy="-7" r="0.4" fill="${c.blacksmith}" opacity="0.5"/></g>`;
+  }
+  return `<g transform="translate(${x},${y})"><polygon points="-2,0 0,1 2,0 2,-5 0,-4 -2,-5" fill="${c.church}"/><polygon points="-2,0 0,1 0,-4 -2,-5" fill="${c.wallShade}"/><polygon points="0,-10 -2.5,-5 0,-3.8 2.5,-5" fill="${c.roofA}"/><polygon points="0,-10.4 -2.7,-4.8 -2.5,-5 0,-10" fill="${snow}"/><polygon points="0,-10.4 2.7,-4.8 2.5,-5 0,-10" fill="${snow}" opacity="0.9"/><ellipse cx="0" cy="-5" rx="2" ry="0.4" fill="${snow}"/><line x1="0" y1="-12" x2="0" y2="-10" stroke="${c.wall}" stroke-width="0.5"/><line x1="-1" y1="-11" x2="1" y2="-11" stroke="${c.wall}" stroke-width="0.5"/></g>`;
+}
+function svgChristmasTree(x, y, c, v) {
+  const tree = c.christmasGreen || "#228b22";
+  const star = c.christmasGold || "#ffd700";
+  const red = c.christmasRed || "#c41e3a";
+  const blue = c.icicleBlue || "#d0e8f8";
+  const gold = c.christmasGold || "#ffd700";
+  if (v === 1) {
+    return `<g transform="translate(${x},${y})"><rect x="-0.3" y="-1" width="0.6" height="2" fill="${c.trunk}"/><polygon points="0,-7 -2.5,-1 2.5,-1" fill="${tree}"/><polygon points="0,-5.5 -2,-1.5 2,-1.5" fill="${tree}" opacity="0.9"/><polygon points="0,-4 -1.5,-2 1.5,-2" fill="${tree}" opacity="0.85"/><polygon points="-0.3,-7.5 0,-8 0.3,-7.5 0.1,-7.5 0.1,-7 -0.1,-7 -0.1,-7.5" fill="${star}"/><circle cx="-1" cy="-3" r="0.25" fill="${red}"/><circle cx="0.8" cy="-2.5" r="0.2" fill="${blue}"/><circle cx="-0.5" cy="-4.5" r="0.2" fill="${gold}"/><circle cx="0.5" cy="-5" r="0.25" fill="${red}"/><rect x="-1.5" y="0.5" width="0.8" height="0.6" fill="${red}"/><rect x="0.5" y="0.3" width="0.7" height="0.5" fill="${blue}"/></g>`;
+  }
+  if (v === 2) {
+    return `<g transform="translate(${x},${y})"><rect x="-0.3" y="-1" width="0.6" height="2" fill="${c.trunk}"/><polygon points="0,-7 -2.5,-1 2.5,-1" fill="${tree}"/><polygon points="0,-5.5 -2,-1.5 2,-1.5" fill="${tree}" opacity="0.9"/><polygon points="-0.3,-7.5 0,-8 0.3,-7.5 0.1,-7.5 0.1,-7 -0.1,-7 -0.1,-7.5" fill="${star}"/><circle cx="-1.5" cy="-2" r="0.15" fill="${red}"/><circle cx="-0.5" cy="-2.5" r="0.15" fill="${gold}"/><circle cx="0.5" cy="-2" r="0.15" fill="${blue}"/><circle cx="1.5" cy="-2.5" r="0.15" fill="${red}"/><circle cx="-1" cy="-4" r="0.15" fill="${blue}"/><circle cx="0" cy="-3.5" r="0.15" fill="${gold}"/><circle cx="1" cy="-4" r="0.15" fill="${red}"/><circle cx="-0.5" cy="-5.5" r="0.15" fill="${gold}"/><circle cx="0.5" cy="-5" r="0.15" fill="${blue}"/></g>`;
+  }
+  return `<g transform="translate(${x},${y})"><rect x="-0.3" y="-1" width="0.6" height="2" fill="${c.trunk}"/><polygon points="0,-7 -2.5,-1 2.5,-1" fill="${tree}"/><polygon points="0,-5.5 -2,-1.5 2,-1.5" fill="${tree}" opacity="0.9"/><polygon points="0,-4 -1.5,-2 1.5,-2" fill="${tree}" opacity="0.85"/><polygon points="-0.3,-7.5 0,-8.2 0.3,-7.5 0.1,-7.5 0.1,-7 -0.1,-7 -0.1,-7.5" fill="${star}"/><circle cx="-1.2" cy="-2.5" r="0.3" fill="${red}"/><circle cx="1" cy="-3" r="0.25" fill="${gold}"/><circle cx="-0.3" cy="-4" r="0.25" fill="${blue}"/><circle cx="0.7" cy="-5" r="0.2" fill="${red}"/><circle cx="-0.5" cy="-5.8" r="0.2" fill="${gold}"/></g>`;
+}
+function svgWinterLantern(x, y, c, v) {
+  const post = c.lantern;
+  const glow = c.lanternGlow;
+  const snow = c.snowCap;
+  if (v === 1) {
+    return `<g transform="translate(${x},${y})"><line x1="0" y1="0" x2="0" y2="-5" stroke="${post}" stroke-width="0.4"/><line x1="0" y1="-4.5" x2="-1.5" y2="-4.5" stroke="${post}" stroke-width="0.25"/><line x1="0" y1="-4.5" x2="1.5" y2="-4.5" stroke="${post}" stroke-width="0.25"/><rect x="-2" y="-5.5" width="1" height="1" fill="${glow}" opacity="0.8"/><rect x="1" y="-5.5" width="1" height="1" fill="${glow}" opacity="0.8"/><ellipse cx="-1.5" cy="-5.7" rx="0.6" ry="0.2" fill="${snow}"/><ellipse cx="1.5" cy="-5.7" rx="0.6" ry="0.2" fill="${snow}"/><circle cx="-1.5" cy="-5" r="0.8" fill="${glow}" opacity="0.3"/><circle cx="1.5" cy="-5" r="0.8" fill="${glow}" opacity="0.3"/></g>`;
+  }
+  return `<g transform="translate(${x},${y})"><line x1="0" y1="0" x2="0" y2="-5" stroke="${post}" stroke-width="0.35"/><rect x="-0.5" y="-6" width="1" height="1.2" fill="${glow}" opacity="0.8"/><ellipse cx="0" cy="-6.2" rx="0.6" ry="0.25" fill="${snow}"/><circle cx="0" cy="-5.4" r="1" fill="${glow}" opacity="0.25"/><ellipse cx="0" cy="0" rx="0.8" ry="0.3" fill="${snow}" opacity="0.5"/></g>`;
+}
+function svgFrozenFountain(x, y, c, v) {
+  const stone = c.fountain;
+  const ice = c.ice;
+  const icicle = c.icicleBlue || "#d0e8f8";
+  if (v === 1) {
+    return `<g transform="translate(${x},${y})"><ellipse cx="0" cy="0" rx="2.5" ry="1" fill="${stone}"/><ellipse cx="0" cy="-0.3" rx="2" ry="0.7" fill="${ice}" opacity="0.7"/><rect x="-0.4" y="-3" width="0.8" height="3" fill="${stone}"/><ellipse cx="0" cy="-3" rx="1" ry="0.4" fill="${stone}"/><polygon points="0,-5 -0.3,-3 0.3,-3" fill="${ice}"/><polygon points="-0.5,-4 -0.2,-3 -0.8,-3" fill="${icicle}"/><polygon points="0.5,-4.5 0.2,-3 0.8,-3" fill="${icicle}"/><polygon points="-1.5,-1 -1.5,-0.3 -1.3,-0.3" fill="${icicle}" opacity="0.8"/><polygon points="1.5,-1.2 1.5,-0.3 1.3,-0.3" fill="${icicle}" opacity="0.8"/></g>`;
+  }
+  return `<g transform="translate(${x},${y})"><ellipse cx="0" cy="0" rx="2.5" ry="1" fill="${stone}"/><ellipse cx="0" cy="-0.3" rx="2" ry="0.7" fill="${ice}" opacity="0.6"/><rect x="-0.4" y="-3" width="0.8" height="3" fill="${stone}"/><ellipse cx="0" cy="-3" rx="1" ry="0.4" fill="${stone}"/><polygon points="-0.4,-3.8 -0.1,-3 -0.7,-3" fill="${icicle}" opacity="0.7"/><polygon points="0.4,-4 0.1,-3 0.7,-3" fill="${icicle}" opacity="0.7"/></g>`;
 }
 function svgSnowdrift(x, y, c, v) {
   const snow = c.snowCap;
@@ -2742,6 +3355,84 @@ function svgCherryPetals(x, y, c, v) {
   }
   return `<g transform="translate(${x},${y})"><ellipse cx="-1" cy="0" rx="0.3" ry="0.15" fill="${pink}" opacity="0.5"/><ellipse cx="0.5" cy="0.3" rx="0.25" ry="0.12" fill="${pink}" opacity="0.45"/><ellipse cx="1.2" cy="-0.2" rx="0.3" ry="0.15" fill="${pink}" opacity="0.4"/><ellipse cx="-0.3" cy="-0.3" rx="0.2" ry="0.1" fill="${pink}" opacity="0.5"/></g>`;
 }
+function svgCherryBlossomFull(x, y, c, v) {
+  const pink = c.blossomPink || c.cherryPetalPink;
+  const white = c.blossomWhite || c.cherryPetalWhite;
+  const trunk = c.cherryTrunk;
+  if (v === 1) {
+    return `<g transform="translate(${x},${y})"><rect x="-0.6" y="-1" width="1.2" height="3.5" fill="${trunk}"/><circle cx="0" cy="-4.5" r="2.5" fill="${white}" opacity="0.7"/><circle cx="-1.8" cy="-3.5" r="1.8" fill="${pink}" opacity="0.65"/><circle cx="1.8" cy="-3.5" r="1.8" fill="${white}" opacity="0.6"/><circle cx="0" cy="-6" r="1.5" fill="${pink}" opacity="0.55"/><circle cx="-1" cy="-5" r="1" fill="${white}" opacity="0.5"/><circle cx="1" cy="-5" r="1" fill="${pink}" opacity="0.5"/></g>`;
+  }
+  if (v === 2) {
+    return `<g transform="translate(${x},${y})"><rect x="-0.6" y="-1" width="1.2" height="3.5" fill="${trunk}"/><circle cx="0" cy="-4" r="2.3" fill="${pink}" opacity="0.7"/><circle cx="-1.5" cy="-3.2" r="1.6" fill="${pink}" opacity="0.65"/><circle cx="1.5" cy="-3.2" r="1.6" fill="${pink}" opacity="0.6"/><circle cx="0" cy="-5.5" r="1.3" fill="${pink}" opacity="0.55"/><ellipse cx="-2" cy="0.5" rx="0.3" ry="0.12" fill="${pink}" opacity="0.5"/><ellipse cx="1.5" cy="0.8" rx="0.25" ry="0.1" fill="${pink}" opacity="0.45"/><ellipse cx="0" cy="0.3" rx="0.2" ry="0.08" fill="${pink}" opacity="0.4"/></g>`;
+  }
+  return `<g transform="translate(${x},${y})"><rect x="-0.6" y="-1" width="1.2" height="3.5" fill="${trunk}"/><circle cx="0" cy="-4.5" r="2.8" fill="${pink}" opacity="0.7"/><circle cx="-2" cy="-3.5" r="2" fill="${pink}" opacity="0.65"/><circle cx="2" cy="-3.5" r="2" fill="${pink}" opacity="0.6"/><circle cx="0" cy="-6.5" r="1.5" fill="${pink}" opacity="0.55"/><circle cx="-1" cy="-5.5" r="1.2" fill="${pink}" opacity="0.5"/><circle cx="1" cy="-5.5" r="1.2" fill="${pink}" opacity="0.5"/></g>`;
+}
+function svgCherryBlossomBranch(x, y, c, v) {
+  const pink = c.blossomPink || c.cherryPetalPink;
+  const branch = c.cherryBranch;
+  if (v === 1) {
+    return `<g transform="translate(${x},${y})"><path d="M0,0 Q-1.5,-2 -3,-2" stroke="${branch}" fill="none" stroke-width="0.4"/><circle cx="-2.5" cy="-2.2" r="0.8" fill="${pink}" opacity="0.6"/><circle cx="-3.2" cy="-1.8" r="0.6" fill="${pink}" opacity="0.5"/><circle cx="-1.8" cy="-2" r="0.5" fill="${pink}" opacity="0.55"/></g>`;
+  }
+  return `<g transform="translate(${x},${y})"><path d="M0,0 Q0.5,-1.5 1,-3" stroke="${branch}" fill="none" stroke-width="0.35"/><circle cx="0.8" cy="-2.5" r="0.7" fill="${pink}" opacity="0.6"/><circle cx="1.2" cy="-3.2" r="0.5" fill="${pink}" opacity="0.55"/><circle cx="0.3" cy="-1.5" r="0.4" fill="${pink}" opacity="0.5"/></g>`;
+}
+function svgPeachBlossom(x, y, c, v) {
+  const pink = c.peachPink || "#ffd5cc";
+  const trunk = c.cherryTrunk;
+  if (v === 1) {
+    return `<g transform="translate(${x},${y})"><rect x="-0.4" y="-1" width="0.8" height="3" fill="${trunk}"/><circle cx="0" cy="-3.5" r="2" fill="${pink}" opacity="0.65"/><circle cx="-1.2" cy="-2.8" r="1.2" fill="${pink}" opacity="0.55"/><circle cx="1.2" cy="-2.8" r="1.2" fill="${pink}" opacity="0.5"/><circle cx="0" cy="-4.8" r="0.8" fill="${pink}" opacity="0.5"/></g>`;
+  }
+  return `<g transform="translate(${x},${y})"><rect x="-0.5" y="-1" width="1" height="3.5" fill="${trunk}"/><circle cx="0" cy="-4" r="2.5" fill="${pink}" opacity="0.65"/><circle cx="-1.5" cy="-3" r="1.5" fill="${pink}" opacity="0.55"/><circle cx="1.5" cy="-3" r="1.5" fill="${pink}" opacity="0.5"/><circle cx="0" cy="-5.5" r="1.2" fill="${pink}" opacity="0.5"/></g>`;
+}
+function svgFlowerBed(x, y, c, v) {
+  const soil = c.gardenSoil;
+  const red = c.tulipRed;
+  const yellow = c.tulipYellow;
+  const purple = c.crocusPurple;
+  if (v === 1) {
+    return `<g transform="translate(${x},${y})"><rect x="-2" y="-0.3" width="4" height="0.8" rx="0.2" fill="${soil}"/><circle cx="-1.2" cy="-0.8" r="0.35" fill="${red}"/><circle cx="-0.4" cy="-0.9" r="0.3" fill="${yellow}"/><circle cx="0.4" cy="-0.7" r="0.35" fill="${purple}"/><circle cx="1.2" cy="-0.85" r="0.3" fill="${red}"/><line x1="-1.2" y1="-0.5" x2="-1.2" y2="-0.3" stroke="${c.sproutGreen}" stroke-width="0.12"/><line x1="0.4" y1="-0.4" x2="0.4" y2="-0.3" stroke="${c.sproutGreen}" stroke-width="0.12"/></g>`;
+  }
+  return `<g transform="translate(${x},${y})"><ellipse cx="0" cy="0" rx="1.8" ry="0.7" fill="${soil}"/><circle cx="-0.8" cy="-0.5" r="0.35" fill="${red}"/><circle cx="0" cy="-0.6" r="0.3" fill="${yellow}"/><circle cx="0.8" cy="-0.5" r="0.35" fill="${purple}"/><circle cx="-0.4" cy="-0.3" r="0.25" fill="${yellow}" opacity="0.9"/><circle cx="0.4" cy="-0.35" r="0.25" fill="${red}" opacity="0.9"/></g>`;
+}
+function svgWateringCan(x, y, c, _v) {
+  const metal = c.sledRunner || "#607080";
+  const accent = c.sproutGreen;
+  return `<g transform="translate(${x},${y})"><ellipse cx="0" cy="0" rx="1" ry="0.5" fill="${metal}"/><rect x="-0.8" y="-1.2" width="1.6" height="1.2" rx="0.2" fill="${metal}"/><path d="M0.6,-0.8 Q1.2,-1.2 1.8,-1" stroke="${metal}" fill="none" stroke-width="0.2"/><line x1="1.8" y1="-1" x2="2.5" y2="-0.5" stroke="${metal}" stroke-width="0.25"/><ellipse cx="2.5" cy="-0.4" rx="0.25" ry="0.15" fill="${metal}"/><path d="M-0.5,-1.2 Q-0.5,-2 0,-2 Q0.5,-2 0.5,-1.2" stroke="${accent}" fill="none" stroke-width="0.15"/></g>`;
+}
+function svgSeedling(x, y, c, v) {
+  const green = c.sproutGreen;
+  const soil = c.gardenSoil;
+  if (v === 1) {
+    return `<g transform="translate(${x},${y})"><ellipse cx="0" cy="0.2" rx="0.6" ry="0.2" fill="${soil}"/><line x1="0" y1="0" x2="0" y2="-1" stroke="${green}" stroke-width="0.12"/><ellipse cx="-0.4" cy="-1.2" rx="0.35" ry="0.2" fill="${green}" transform="rotate(-30,-0.4,-1.2)"/><ellipse cx="0.4" cy="-1.2" rx="0.35" ry="0.2" fill="${green}" transform="rotate(30,0.4,-1.2)"/></g>`;
+  }
+  return `<g transform="translate(${x},${y})"><ellipse cx="0" cy="0.2" rx="0.5" ry="0.15" fill="${soil}"/><line x1="0" y1="0" x2="0" y2="-0.8" stroke="${green}" stroke-width="0.1"/><ellipse cx="0" cy="-1" rx="0.25" ry="0.4" fill="${green}"/></g>`;
+}
+function svgRobinBird(x, y, c, v) {
+  const brown = c.owl || "#8a7050";
+  const red = c.tulipRed;
+  const beak = c.tulipYellow;
+  if (v === 1) {
+    return `<g transform="translate(${x},${y})"><ellipse cx="0" cy="0" rx="0.8" ry="0.5" fill="${brown}"/><ellipse cx="0.2" cy="-0.1" rx="0.4" ry="0.35" fill="${red}"/><circle cx="0.7" cy="-0.3" r="0.35" fill="${brown}"/><polygon points="1,-0.3 1.3,-0.1 1,-0.15" fill="${beak}"/><polygon points="1,-0.3 1.3,-0.4 1,-0.35" fill="${beak}"/><circle cx="0.8" cy="-0.35" r="0.08" fill="#000"/><line x1="-0.6" y1="0.4" x2="-0.6" y2="0.7" stroke="${brown}" stroke-width="0.1"/></g>`;
+  }
+  return `<g transform="translate(${x},${y})"><ellipse cx="0" cy="0" rx="0.8" ry="0.5" fill="${brown}"/><ellipse cx="0.2" cy="-0.1" rx="0.4" ry="0.35" fill="${red}"/><circle cx="0.7" cy="-0.3" r="0.35" fill="${brown}"/><polygon points="1,-0.3 1.4,-0.25 1,-0.2" fill="${beak}"/><circle cx="0.8" cy="-0.35" r="0.08" fill="#000"/><line x1="-0.5" y1="0.4" x2="-0.5" y2="0.7" stroke="${brown}" stroke-width="0.08"/><line x1="0" y1="0.45" x2="0" y2="0.7" stroke="${brown}" stroke-width="0.08"/></g>`;
+}
+function svgButterflyGarden(x, y, c, v) {
+  const wing1 = c.butterfly;
+  const wing2 = c.butterflyWing;
+  const wing3 = c.tulipPurple;
+  if (v === 1) {
+    return `<g transform="translate(${x},${y})"><ellipse cx="-1" cy="-1" rx="0.5" ry="0.25" fill="${wing1}" opacity="0.7"/><ellipse cx="-1.5" cy="-1.2" rx="0.4" ry="0.2" fill="${wing2}" opacity="0.6"/><ellipse cx="0.5" cy="-0.5" rx="0.4" ry="0.2" fill="${wing3}" opacity="0.65"/><ellipse cx="0.1" cy="-0.6" rx="0.3" ry="0.15" fill="${wing2}" opacity="0.55"/><ellipse cx="1" cy="-1.5" rx="0.35" ry="0.18" fill="${wing1}" opacity="0.6"/><ellipse cx="0.7" cy="-1.6" rx="0.25" ry="0.12" fill="${wing3}" opacity="0.5"/></g>`;
+  }
+  return `<g transform="translate(${x},${y})"><ellipse cx="-0.5" cy="-0.8" rx="0.5" ry="0.25" fill="${wing1}" opacity="0.7"/><ellipse cx="-1" cy="-1" rx="0.4" ry="0.2" fill="${wing2}" opacity="0.6"/><ellipse cx="0.8" cy="-1.2" rx="0.45" ry="0.22" fill="${wing3}" opacity="0.65"/><ellipse cx="0.4" cy="-1.3" rx="0.35" ry="0.17" fill="${wing1}" opacity="0.55"/></g>`;
+}
+function svgUmbrella(x, y, c, v) {
+  const colors = [c.parasolRed, c.parasolBlue, c.parasolYellow];
+  const color = colors[v] || c.parasolRed;
+  const handle = c.trunk;
+  if (v === 2) {
+    return `<g transform="translate(${x},${y})"><path d="M-2,0 Q0,-2 2,0" fill="${color}" opacity="0.8"/><line x1="0" y1="0" x2="0" y2="0.8" stroke="${handle}" stroke-width="0.2"/><path d="M0,0.8 Q0.3,1 0.2,1.3" stroke="${handle}" fill="none" stroke-width="0.15"/></g>`;
+  }
+  return `<g transform="translate(${x},${y})"><line x1="-0.3" y1="1" x2="0.5" y2="-2.5" stroke="${handle}" stroke-width="0.2"/><polygon points="0.4,-2.5 0.7,-2 0.6,-2.5 0.3,-2.5" fill="${color}"/><path d="M0.4,-2.5 L0.5,-1 L0.2,-1 Z" fill="${color}" opacity="0.8"/><path d="M-0.3,1 Q-0.5,1.2 -0.3,1.4" stroke="${handle}" fill="none" stroke-width="0.12"/></g>`;
+}
 function svgTulip(x, y, c, v) {
   const colors = [c.tulipRed, c.tulipYellow, c.tulipPurple];
   const color = colors[v] || c.tulipRed;
@@ -2859,11 +3550,15 @@ function svgSurfboard(x, y, c, v) {
 function svgIceCreamCartAsset(x, y, c, v) {
   const cart = c.iceCreamCart;
   const umbrella = c.iceCreamUmbrella;
-  return `<g transform="translate(${x},${y})"><rect x="-1.5" y="-1.5" width="3" height="2" rx="0.3" fill="${cart}"/><circle cx="-1" cy="0.8" r="0.4" fill="#555"/><circle cx="1" cy="0.8" r="0.4" fill="#555"/><line x1="0" y1="-1.5" x2="0" y2="-3.5" stroke="${c.bareBranch || "#6a5a4a"}" stroke-width="0.3"/><path d="M-2,-3.5 Q0,-4.5 2,-3.5" fill="${umbrella}"/>` + (v === 1 ? `<polygon points="1.5,-2 2.5,-2.3 1.5,-2.5" fill="${c.scarfRed || "#cc3030"}"/>` : "") + (v === 2 ? `<rect x="-0.5" y="-2.5" width="1" height="0.8" rx="0.2" fill="${c.sunflowerPetal || "#f0c820"}"/>` : "") + `</g>`;
+  return `<g transform="translate(${x},${y})"><rect x="-1.5" y="-1.5" width="3" height="2" rx="0.3" fill="${cart}"/><circle cx="-1" cy="0.8" r="0.4" fill="#555"/><circle cx="1" cy="0.8" r="0.4" fill="#555"/><line x1="0" y1="-1.5" x2="0" y2="-3.5" stroke="${c.bareBranch || "#6a5a4a"}" stroke-width="0.3"/><path d="M-2,-3.5 Q0,-4.5 2,-3.5" fill="${umbrella}"/>` + /* v8 ignore start */
+  (v === 1 ? `<polygon points="1.5,-2 2.5,-2.3 1.5,-2.5" fill="${c.scarfRed || "#cc3030"}"/>` : "") + (v === 2 ? `<rect x="-0.5" y="-2.5" width="1" height="0.8" rx="0.2" fill="${c.sunflowerPetal || "#f0c820"}"/>` : "") + /* v8 ignore stop */
+  `</g>`;
 }
 function svgHammock(x, y, c, v) {
   const fabric = c.hammockFabric;
-  return `<g transform="translate(${x},${y})"><line x1="-3" y1="0" x2="-3" y2="-3" stroke="${c.bareBranch || "#6a5a4a"}" stroke-width="0.5"/><line x1="3" y1="0" x2="3" y2="-3" stroke="${c.bareBranch || "#6a5a4a"}" stroke-width="0.5"/><path d="M-3,-2.5 Q0,-0.5 3,-2.5" fill="none" stroke="${fabric}" stroke-width="0.8"/><path d="M-2.5,-2.2 Q0,-0.2 2.5,-2.2" fill="${fabric}" opacity="0.5"/>` + (v === 2 ? `<rect x="-1" y="-1.8" width="2" height="1" rx="0.3" fill="${c.beachTowelA || "#e05050"}" opacity="0.4"/>` : "") + `</g>`;
+  return `<g transform="translate(${x},${y})"><line x1="-3" y1="0" x2="-3" y2="-3" stroke="${c.bareBranch || "#6a5a4a"}" stroke-width="0.5"/><line x1="3" y1="0" x2="3" y2="-3" stroke="${c.bareBranch || "#6a5a4a"}" stroke-width="0.5"/><path d="M-3,-2.5 Q0,-0.5 3,-2.5" fill="none" stroke="${fabric}" stroke-width="0.8"/><path d="M-2.5,-2.2 Q0,-0.2 2.5,-2.2" fill="${fabric}" opacity="0.5"/>` + /* v8 ignore start */
+  (v === 2 ? `<rect x="-1" y="-1.8" width="2" height="1" rx="0.3" fill="${c.beachTowelA || "#e05050"}" opacity="0.4"/>` : "") + /* v8 ignore stop */
+  `</g>`;
 }
 function svgSunflower(x, y, c, v) {
   const petal = c.sunflowerPetal;
@@ -2882,7 +3577,9 @@ function svgSunflower(x, y, c, v) {
       const angle = p / 8 * Math.PI * 2;
       const px = ox + Math.cos(angle) * 1.2;
       const py = -h + Math.sin(angle) * 1.2;
-      parts.push(`<ellipse cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" rx="0.5" ry="0.25" fill="${petal}" transform="rotate(${(p * 45).toFixed(0)},${px.toFixed(1)},${py.toFixed(1)})"/>`);
+      parts.push(
+        `<ellipse cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" rx="0.5" ry="0.25" fill="${petal}" transform="rotate(${(p * 45).toFixed(0)},${px.toFixed(1)},${py.toFixed(1)})"/>`
+      );
     }
   }
   return `<g transform="translate(${x},${y})">${parts.join("")}</g>`;
@@ -2906,14 +3603,18 @@ function svgSprinkler(x, y, c, v) {
 }
 function svgLemonade(x, y, c, v) {
   const stand = c.lemonadeStand;
-  return `<g transform="translate(${x},${y})"><rect x="-2" y="-1.5" width="4" height="2" fill="${stand}"/><line x1="-2" y1="-1.5" x2="-2" y2="0.8" stroke="${c.bareBranch || "#6a5a4a"}" stroke-width="0.4"/><line x1="2" y1="-1.5" x2="2" y2="0.8" stroke="${c.bareBranch || "#6a5a4a"}" stroke-width="0.4"/>` + (v >= 1 ? `<rect x="-1" y="-2" width="2" height="0.5" rx="0.2" fill="${stand}" opacity="0.8"/>` : "") + `<circle cx="0" cy="-0.8" r="0.4" fill="${c.sunflowerPetal || "#f0c820"}" opacity="0.7"/></g>`;
+  return `<g transform="translate(${x},${y})"><rect x="-2" y="-1.5" width="4" height="2" fill="${stand}"/><line x1="-2" y1="-1.5" x2="-2" y2="0.8" stroke="${c.bareBranch || "#6a5a4a"}" stroke-width="0.4"/><line x1="2" y1="-1.5" x2="2" y2="0.8" stroke="${c.bareBranch || "#6a5a4a"}" stroke-width="0.4"/>` + /* v8 ignore stop */
+  (v >= 1 ? `<rect x="-1" y="-2" width="2" height="0.5" rx="0.2" fill="${stand}" opacity="0.8"/>` : "") + /* v8 ignore start */
+  `<circle cx="0" cy="-0.8" r="0.4" fill="${c.sunflowerPetal || "#f0c820"}" opacity="0.7"/></g>`;
 }
 function svgFirefliesAsset(x, y, c, v) {
   const glow = c.lanternGlow || "#ffc840";
   const count = v === 0 ? 3 : v === 1 ? 6 : 1;
   const parts = [];
   if (v === 2) {
-    parts.push(`<rect x="-0.5" y="-2" width="1" height="1.5" rx="0.2" fill="#fff" opacity="0.15"/>`);
+    parts.push(
+      `<rect x="-0.5" y="-2" width="1" height="1.5" rx="0.2" fill="#fff" opacity="0.15"/>`
+    );
     parts.push(`<circle cx="0" cy="-1.5" r="0.2" fill="${glow}" opacity="0.8"/>`);
     parts.push(`<circle cx="-0.2" cy="-1" r="0.15" fill="${glow}" opacity="0.6"/>`);
   } else {
@@ -2929,20 +3630,29 @@ function svgFirefliesAsset(x, y, c, v) {
 function svgSwimmingPool(x, y, c, v) {
   const water = c.poolWater;
   const edge = c.poolEdge;
-  return `<g transform="translate(${x},${y})"><rect x="-3" y="-1" width="6" height="2.5" rx="0.5" fill="${edge}"/><rect x="-2.5" y="-0.5" width="5" height="1.5" rx="0.3" fill="${water}" opacity="0.7"/>` + (v === 1 ? `<ellipse cx="0.5" cy="0" rx="0.8" ry="0.3" fill="${c.parasolYellow || "#e8c820"}" opacity="0.5"/>` : "") + (v === 2 ? `<line x1="2.5" y1="-1" x2="2.5" y2="-2.5" stroke="${edge}" stroke-width="0.3"/>` : "") + `</g>`;
+  return `<g transform="translate(${x},${y})"><rect x="-3" y="-1" width="6" height="2.5" rx="0.5" fill="${edge}"/><rect x="-2.5" y="-0.5" width="5" height="1.5" rx="0.3" fill="${water}" opacity="0.7"/>` + /* v8 ignore start */
+  (v === 1 ? `<ellipse cx="0.5" cy="0" rx="0.8" ry="0.3" fill="${c.parasolYellow || "#e8c820"}" opacity="0.5"/>` : "") + /* v8 ignore stop */
+  (v === 2 ? `<line x1="2.5" y1="-1" x2="2.5" y2="-2.5" stroke="${edge}" stroke-width="0.3"/>` : "") + `</g>`;
 }
 function svgAutumnMaple(x, y, c, v) {
-  const colors = [c.mapleRed, c.mapleCrimson, c.mapleOrange];
-  const color = colors[v] || c.mapleRed;
   const trunk = c.trunk;
-  return `<g transform="translate(${x},${y})"><rect x="-0.5" y="-1" width="1" height="3" fill="${trunk}"/><circle cx="0" cy="-3.5" r="2.5" fill="${color}" opacity="0.75"/><circle cx="-1.5" cy="-2.5" r="1.5" fill="${color}" opacity="0.6"/><circle cx="1.5" cy="-2.5" r="1.5" fill="${color}" opacity="0.6"/><circle cx="0" cy="-5" r="1.2" fill="${color}" opacity="0.5"/></g>`;
+  if (v === 1) {
+    return `<g transform="translate(${x},${y})"><rect x="-0.6" y="-1" width="1.2" height="3.5" fill="${trunk}"/><circle cx="0" cy="-4" r="2.2" fill="${c.autumnGold}" opacity="0.7"/><circle cx="-1.5" cy="-3" r="1.5" fill="${c.mapleOrange}" opacity="0.65"/><circle cx="1.5" cy="-3" r="1.5" fill="${c.autumnRust}" opacity="0.6"/><circle cx="0" cy="-5.5" r="1" fill="${c.autumnBronze}" opacity="0.55"/><circle cx="-0.5" cy="-2.5" r="0.8" fill="${c.autumnGold}" opacity="0.5"/></g>`;
+  }
+  if (v === 2) {
+    return `<g transform="translate(${x},${y})"><rect x="-0.6" y="-1" width="1.2" height="3.5" fill="${trunk}"/><circle cx="0" cy="-3.8" r="2" fill="${c.mapleRed}" opacity="0.65"/><circle cx="-1.2" cy="-3" r="1.3" fill="${c.autumnGold}" opacity="0.6"/><circle cx="1.2" cy="-3" r="1.3" fill="${c.mapleCrimson}" opacity="0.55"/><circle cx="0" cy="-5" r="0.9" fill="${c.autumnBronze}" opacity="0.5"/><ellipse cx="-1.5" cy="0.5" rx="0.4" ry="0.15" fill="${c.mapleRed}" opacity="0.5"/><ellipse cx="1" cy="0.3" rx="0.3" ry="0.12" fill="${c.autumnGold}" opacity="0.45"/><ellipse cx="0" cy="0.6" rx="0.35" ry="0.12" fill="${c.mapleOrange}" opacity="0.4"/></g>`;
+  }
+  return `<g transform="translate(${x},${y})"><rect x="-0.6" y="-1" width="1.2" height="3.5" fill="${trunk}"/><circle cx="0" cy="-4" r="2.5" fill="${c.mapleRed}" opacity="0.7"/><circle cx="-1.5" cy="-3" r="1.5" fill="${c.mapleCrimson}" opacity="0.6"/><circle cx="1.5" cy="-3" r="1.5" fill="${c.mapleOrange}" opacity="0.55"/><circle cx="0" cy="-5.5" r="1.2" fill="${c.mapleRed}" opacity="0.5"/><circle cx="-0.8" cy="-2.5" r="0.9" fill="${c.mapleCrimson}" opacity="0.45"/></g>`;
 }
 function svgAutumnOak(x, y, c, v) {
-  const colors = [c.oakGold, c.oakBrown, c.oakGold];
-  const color = colors[v] || c.oakGold;
-  const mix = v === 2 ? c.sproutGreen || "#80d050" : color;
   const trunk = c.trunk;
-  return `<g transform="translate(${x},${y})"><rect x="-0.6" y="-1" width="1.2" height="3.5" fill="${trunk}"/><circle cx="0" cy="-3" r="2.8" fill="${color}" opacity="0.7"/><circle cx="-1" cy="-4" r="1.5" fill="${color}" opacity="0.6"/><circle cx="1.5" cy="-3.5" r="1.3" fill="${mix}" opacity="0.55"/></g>`;
+  if (v === 1) {
+    return `<g transform="translate(${x},${y})"><rect x="-0.7" y="-1" width="1.4" height="4" fill="${trunk}"/><circle cx="0" cy="-3.5" r="2.8" fill="${c.autumnBronze}" opacity="0.65"/><circle cx="-1.2" cy="-4.5" r="1.5" fill="${c.autumnOlive}" opacity="0.55"/><circle cx="1.5" cy="-4" r="1.3" fill="${c.oakBrown}" opacity="0.6"/><circle cx="-0.5" cy="-2.5" r="1" fill="${c.autumnBronze}" opacity="0.5"/><circle cx="0.5" cy="-5.5" r="0.8" fill="${c.autumnOlive}" opacity="0.4"/></g>`;
+  }
+  if (v === 2) {
+    return `<g transform="translate(${x},${y})"><rect x="-0.7" y="-1" width="1.4" height="4" fill="${trunk}"/><circle cx="0" cy="-3.5" r="2.6" fill="${c.autumnRust}" opacity="0.65"/><circle cx="-1.4" cy="-4.2" r="1.4" fill="${c.autumnBurgundy}" opacity="0.6"/><circle cx="1.3" cy="-3.8" r="1.5" fill="${c.autumnBronze}" opacity="0.55"/><circle cx="0" cy="-5.5" r="1" fill="${c.autumnRust}" opacity="0.5"/><ellipse cx="0" cy="0.5" rx="1.5" ry="0.3" fill="${c.autumnBurgundy}" opacity="0.3"/></g>`;
+  }
+  return `<g transform="translate(${x},${y})"><rect x="-0.7" y="-1" width="1.4" height="4" fill="${trunk}"/><circle cx="0" cy="-3.5" r="2.8" fill="${c.oakGold}" opacity="0.7"/><circle cx="-1.2" cy="-4.5" r="1.5" fill="${c.autumnGold}" opacity="0.6"/><circle cx="1.5" cy="-4" r="1.4" fill="${c.autumnBronze}" opacity="0.55"/><circle cx="-0.5" cy="-2.5" r="1" fill="${c.oakGold}" opacity="0.5"/><ellipse cx="0.8" cy="-2" rx="0.25" ry="0.35" fill="${c.acornBody}"/></g>`;
 }
 function svgAutumnBirch(x, y, c, v) {
   const yellow = c.birchYellow;
@@ -2971,7 +3681,9 @@ function svgFallenLeaves(x, y, c, v) {
     const lx = (i - colors.length / 2) * 1.2;
     const ly = i % 2 * 0.3;
     const rot = i * 35 - 20;
-    parts.push(`<ellipse cx="${lx}" cy="${ly}" rx="0.6" ry="0.25" fill="${colors[i]}" opacity="0.7" transform="rotate(${rot},${lx},${ly})"/>`);
+    parts.push(
+      `<ellipse cx="${lx}" cy="${ly}" rx="0.6" ry="0.25" fill="${colors[i]}" opacity="0.7" transform="rotate(${rot},${lx},${ly})"/>`
+    );
   }
   return `<g transform="translate(${x},${y})">${parts.join("")}</g>`;
 }
@@ -2983,7 +3695,9 @@ function svgLeafSwirl(x, y, c, v) {
     const radius = 1 + i * 0.3;
     const lx = Math.cos(angle) * radius;
     const ly = -1.5 + Math.sin(angle) * radius * 0.5;
-    parts.push(`<ellipse cx="${lx.toFixed(1)}" cy="${ly.toFixed(1)}" rx="0.4" ry="0.2" fill="${colors[i]}" opacity="0.65" transform="rotate(${(i * 60).toFixed(0)},${lx.toFixed(1)},${ly.toFixed(1)})"/>`);
+    parts.push(
+      `<ellipse cx="${lx.toFixed(1)}" cy="${ly.toFixed(1)}" rx="0.4" ry="0.2" fill="${colors[i]}" opacity="0.65" transform="rotate(${(i * 60).toFixed(0)},${lx.toFixed(1)},${ly.toFixed(1)})"/>`
+    );
   }
   return `<g transform="translate(${x},${y})">${parts.join("")}</g>`;
 }
@@ -3000,10 +3714,50 @@ function svgAcorn(x, y, c, v) {
     } else {
       parts.push(`<ellipse cx="${ax}" cy="0" rx="0.4" ry="0.5" fill="${body}"/>`);
       parts.push(`<path d="M${ax - 0.45},-0.15 Q${ax},-0.45 ${ax + 0.45},-0.15" fill="${cap}"/>`);
-      parts.push(`<line x1="${ax}" y1="-0.35" x2="${ax}" y2="-0.55" stroke="${cap}" stroke-width="0.15"/>`);
+      parts.push(
+        `<line x1="${ax}" y1="-0.35" x2="${ax}" y2="-0.55" stroke="${cap}" stroke-width="0.15"/>`
+      );
     }
   }
   return `<g transform="translate(${x},${y})">${parts.join("")}</g>`;
+}
+function svgPumpkinPatch(x, y, c, v) {
+  const pumpkin = c.pumpkin;
+  const stem = c.trunk;
+  const vine = c.autumnOlive || "#8b8b40";
+  if (v === 1) {
+    return `<g transform="translate(${x},${y})"><ellipse cx="-1" cy="0" rx="1" ry="0.7" fill="${pumpkin}"/><rect x="-1.15" y="-0.7" width="0.3" height="0.4" fill="${stem}"/><ellipse cx="0.8" cy="0.2" rx="0.8" ry="0.6" fill="${pumpkin}"/><rect x="0.65" y="-0.4" width="0.25" height="0.35" fill="${stem}"/><ellipse cx="0" cy="0.5" rx="0.6" ry="0.45" fill="${pumpkin}" opacity="0.9"/><path d="M-1.5,-0.3 Q-2,-0.8 -1.5,-1.2" stroke="${vine}" fill="none" stroke-width="0.15"/></g>`;
+  }
+  if (v === 2) {
+    return `<g transform="translate(${x},${y})"><ellipse cx="0" cy="0" rx="1.4" ry="1" fill="${pumpkin}"/><line x1="-0.5" y1="-0.9" x2="-0.5" y2="0.9" stroke="${c.autumnRust || "#c05530"}" stroke-width="0.1" opacity="0.3"/><line x1="0.5" y1="-0.9" x2="0.5" y2="0.9" stroke="${c.autumnRust || "#c05530"}" stroke-width="0.1" opacity="0.3"/><rect x="-0.15" y="-1" width="0.3" height="0.5" fill="${stem}"/><path d="M0.1,-0.8 Q0.8,-1.2 1.2,-0.8" stroke="${vine}" fill="none" stroke-width="0.12"/></g>`;
+  }
+  return `<g transform="translate(${x},${y})"><ellipse cx="-0.6" cy="0" rx="0.9" ry="0.65" fill="${pumpkin}"/><rect x="-0.75" y="-0.65" width="0.25" height="0.35" fill="${stem}"/><ellipse cx="0.7" cy="0.15" rx="0.7" ry="0.5" fill="${pumpkin}" opacity="0.9"/><rect x="0.55" y="-0.35" width="0.22" height="0.3" fill="${stem}"/><path d="M-1,-0.2 Q-1.5,-0.5 -1.3,-1" stroke="${vine}" fill="none" stroke-width="0.12"/></g>`;
+}
+function svgHayMaze(x, y, c, v) {
+  const hay = c.haybale;
+  const accent = c.autumnGold || "#d4a84b";
+  if (v === 1) {
+    return `<g transform="translate(${x},${y})"><rect x="-2" y="-0.8" width="4" height="1.2" rx="0.2" fill="${hay}"/><rect x="-2" y="-2" width="1.2" height="1.3" rx="0.2" fill="${hay}"/><line x1="-1.5" y1="-0.7" x2="-1.5" y2="0.3" stroke="${accent}" stroke-width="0.08"/><line x1="0" y1="-0.7" x2="0" y2="0.3" stroke="${accent}" stroke-width="0.08"/><line x1="1.5" y1="-0.7" x2="1.5" y2="0.3" stroke="${accent}" stroke-width="0.08"/></g>`;
+  }
+  return `<g transform="translate(${x},${y})"><rect x="-1.5" y="-0.5" width="3" height="1" rx="0.2" fill="${hay}"/><rect x="-1" y="-1.3" width="2" height="0.9" rx="0.2" fill="${hay}" opacity="0.9"/><line x1="-0.8" y1="-0.4" x2="-0.8" y2="0.4" stroke="${accent}" stroke-width="0.08"/><line x1="0.8" y1="-0.4" x2="0.8" y2="0.4" stroke="${accent}" stroke-width="0.08"/></g>`;
+}
+function svgAppleBasket(x, y, c, v) {
+  const basket = c.nestBrown || "#7a5530";
+  const apple = c.appleRed || "#c41e3a";
+  const green = c.pearGreen || "#d1e231";
+  if (v === 1) {
+    return `<g transform="translate(${x},${y})"><path d="M-1.2,0 Q-1.5,-1 0,-1 Q1.5,-1 1.2,0 L1,0.3 L-1,0.3 Z" fill="${basket}"/><circle cx="-0.5" cy="-0.8" r="0.4" fill="${apple}"/><circle cx="0.3" cy="-0.9" r="0.35" fill="${apple}"/><circle cx="0" cy="-0.5" r="0.4" fill="${green}"/><circle cx="-0.2" cy="-1.3" r="0.35" fill="${apple}"/><circle cx="0.5" cy="-0.4" r="0.3" fill="${apple}" opacity="0.9"/><path d="M-0.5,0.3 Q0,-0.2 0.5,0.3" stroke="${basket}" fill="none" stroke-width="0.1"/></g>`;
+  }
+  return `<g transform="translate(${x},${y})"><path d="M-1,0 Q-1.3,-0.8 0,-0.8 Q1.3,-0.8 1,0 L0.8,0.2 L-0.8,0.2 Z" fill="${basket}"/><circle cx="-0.3" cy="-0.5" r="0.35" fill="${apple}"/><circle cx="0.3" cy="-0.6" r="0.3" fill="${apple}"/><circle cx="0" cy="-0.3" r="0.3" fill="${green}"/><path d="M-0.4,0.2 Q0,-0.1 0.4,0.2" stroke="${basket}" fill="none" stroke-width="0.08"/></g>`;
+}
+function svgRake(x, y, c, v) {
+  const handle = c.trunk;
+  const metal = c.sledRunner || "#607080";
+  const leaf = c.fallenLeafOrange || "#d08030";
+  if (v === 1) {
+    return `<g transform="translate(${x},${y})"><line x1="-1" y1="1" x2="1.5" y2="-3" stroke="${handle}" stroke-width="0.3"/><rect x="0.8" y="-3.2" width="1.5" height="0.3" fill="${metal}"/><line x1="0.9" y1="-3" x2="0.9" y2="-2.2" stroke="${metal}" stroke-width="0.12"/><line x1="1.3" y1="-3" x2="1.3" y2="-2.2" stroke="${metal}" stroke-width="0.12"/><line x1="1.7" y1="-3" x2="1.7" y2="-2.2" stroke="${metal}" stroke-width="0.12"/><line x1="2.1" y1="-3" x2="2.1" y2="-2.2" stroke="${metal}" stroke-width="0.12"/><ellipse cx="-1.5" cy="0.8" rx="1.2" ry="0.5" fill="${leaf}" opacity="0.6"/><ellipse cx="-1.2" cy="0.5" rx="0.8" ry="0.3" fill="${c.fallenLeafRed || "#c04030"}" opacity="0.5"/></g>`;
+  }
+  return `<g transform="translate(${x},${y})"><line x1="0" y1="0.5" x2="0" y2="-2.5" stroke="${handle}" stroke-width="0.25"/><rect x="-0.8" y="-2.7" width="1.6" height="0.25" fill="${metal}"/><line x1="-0.6" y1="-2.5" x2="-0.6" y2="-1.8" stroke="${metal}" stroke-width="0.1"/><line x1="-0.2" y1="-2.5" x2="-0.2" y2="-1.8" stroke="${metal}" stroke-width="0.1"/><line x1="0.2" y1="-2.5" x2="0.2" y2="-1.8" stroke="${metal}" stroke-width="0.1"/><line x1="0.6" y1="-2.5" x2="0.6" y2="-1.8" stroke="${metal}" stroke-width="0.1"/></g>`;
 }
 function svgCornStalkAsset(x, y, c, v) {
   const stalk = c.cornStalkColor;
@@ -3012,12 +3766,18 @@ function svgCornStalkAsset(x, y, c, v) {
   const parts = [];
   for (let i = 0; i < count; i++) {
     const sx = i * 1.2 - (count - 1) * 0.6;
-    parts.push(`<line x1="${sx}" y1="0.5" x2="${sx}" y2="-3" stroke="${stalk}" stroke-width="0.4"/>`);
+    parts.push(
+      `<line x1="${sx}" y1="0.5" x2="${sx}" y2="-3" stroke="${stalk}" stroke-width="0.4"/>`
+    );
     if (v === 2 || v === 0) {
       parts.push(`<ellipse cx="${sx + 0.5}" cy="-1.5" rx="0.3" ry="0.7" fill="${ear}"/>`);
     }
-    parts.push(`<path d="M${sx},-2 Q${sx + 1.5},-2.5 ${sx + 1},-1" fill="${stalk}" opacity="0.5"/>`);
-    parts.push(`<path d="M${sx},-1.5 Q${sx - 1.5},-2 ${sx - 1},-0.5" fill="${stalk}" opacity="0.5"/>`);
+    parts.push(
+      `<path d="M${sx},-2 Q${sx + 1.5},-2.5 ${sx + 1},-1" fill="${stalk}" opacity="0.5"/>`
+    );
+    parts.push(
+      `<path d="M${sx},-1.5 Q${sx - 1.5},-2 ${sx - 1},-0.5" fill="${stalk}" opacity="0.5"/>`
+    );
   }
   return `<g transform="translate(${x},${y})">${parts.join("")}</g>`;
 }
@@ -3034,7 +3794,13 @@ function svgScarecrowAutumn(x, y, c, v) {
 }
 function svgHarvestBasket(x, y, c, v) {
   const basket = c.oakBrown || "#8a6030";
-  const contents = v === 0 ? [c.harvestApple, c.harvestApple] : v === 1 ? [c.sproutGreen || "#80d050", c.harvestApple, c.sunflowerPetal || "#f0c820"] : [c.harvestGrape, c.harvestGrape];
+  const contents = v === 0 ? [c.harvestApple, c.harvestApple] : v === 1 ? (
+    /* v8 ignore start */
+    [c.sproutGreen || "#80d050", c.harvestApple, c.sunflowerPetal || "#f0c820"]
+  ) : (
+    /* v8 ignore stop */
+    [c.harvestGrape, c.harvestGrape]
+  );
   return `<g transform="translate(${x},${y})"><path d="M-1.5,0 Q-1.8,-1 -1,-1.5 Q0,-1.8 1,-1.5 Q1.8,-1 1.5,0 Z" fill="${basket}"/><path d="M-1,-1.3 Q0,-2 1,-1.3" fill="none" stroke="${basket}" stroke-width="0.3"/>` + contents.map(
     (col, i) => `<circle cx="${(i - (contents.length - 1) / 2) * 0.6}" cy="-1" r="0.35" fill="${col}"/>`
   ).join("") + `</g>`;
@@ -3047,7 +3813,9 @@ function svgHotDrink(x, y, c, v) {
 function svgAutumnWreath(x, y, c, v) {
   const green = c.wreathGreen;
   const berry = c.wreathBerry;
-  return `<g transform="translate(${x},${y})"><circle cx="0" cy="-1.5" r="1.5" fill="none" stroke="${green}" stroke-width="0.8"/><circle cx="0" cy="-1.5" r="1.2" fill="none" stroke="${green}" stroke-width="0.4" opacity="0.5"/>` + (v >= 1 ? `<circle cx="0.8" cy="-0.8" r="0.2" fill="${berry}"/><circle cx="1" cy="-1" r="0.2" fill="${berry}"/>` : "") + (v === 2 ? `<path d="M-0.3,-0.2 Q0,0.2 0.3,-0.2" fill="${c.scarfRed || "#cc3030"}" opacity="0.7"/>` : "") + `</g>`;
+  return `<g transform="translate(${x},${y})"><circle cx="0" cy="-1.5" r="1.5" fill="none" stroke="${green}" stroke-width="0.8"/><circle cx="0" cy="-1.5" r="1.2" fill="none" stroke="${green}" stroke-width="0.4" opacity="0.5"/>` + (v >= 1 ? `<circle cx="0.8" cy="-0.8" r="0.2" fill="${berry}"/><circle cx="1" cy="-1" r="0.2" fill="${berry}"/>` : "") + /* v8 ignore start */
+  (v === 2 ? `<path d="M-0.3,-0.2 Q0,0.2 0.3,-0.2" fill="${c.scarfRed || "#cc3030"}" opacity="0.7"/>` : "") + /* v8 ignore stop */
+  `</g>`;
 }
 var RENDERERS = {
   // Water
@@ -3114,12 +3882,20 @@ var RENDERERS = {
   cow: svgCow,
   chicken: svgChicken,
   horse: svgHorse,
+  donkey: svgDonkey,
+  goat: svgGoat,
   ricePaddy: svgRicePaddy,
   silo: svgSilo,
   pigpen: svgPigpen,
   trough: svgTrough,
   haystack: svgHaystack,
   orchard: svgOrchard,
+  appleTree: svgAppleTree,
+  oliveTree: svgOliveTree,
+  lemonTree: svgLemonTree,
+  orangeTree: svgOrangeTree,
+  pearTree: svgPearTree,
+  peachTree: svgPeachTree,
   beeFarm: svgBeeFarm,
   pumpkin: svgPumpkin,
   // Village
@@ -3185,6 +3961,13 @@ var RENDERERS = {
   bareBush: svgBareBush,
   winterBird: svgWinterBird,
   firewood: svgFirewood,
+  houseWinter: svgHouseWinter,
+  houseBWinter: svgHouseBWinter,
+  barnWinter: svgBarnWinter,
+  churchWinter: svgChurchWinter,
+  christmasTree: svgChristmasTree,
+  winterLantern: svgWinterLantern,
+  frozenFountain: svgFrozenFountain,
   // Seasonal: Spring
   cherryBlossom: svgCherryBlossom,
   cherryBlossomSmall: svgCherryBlossomSmall,
@@ -3198,6 +3981,15 @@ var RENDERERS = {
   rainPuddle: svgRainPuddle,
   birdhouse: svgBirdhouse,
   gardenBed: svgGardenBed,
+  cherryBlossomFull: svgCherryBlossomFull,
+  cherryBlossomBranch: svgCherryBlossomBranch,
+  peachBlossom: svgPeachBlossom,
+  flowerBed: svgFlowerBed,
+  wateringCan: svgWateringCan,
+  seedling: svgSeedling,
+  robinBird: svgRobinBird,
+  butterflyGarden: svgButterflyGarden,
+  umbrella: svgUmbrella,
   // Seasonal: Summer
   parasol: svgParasol,
   beachTowel: svgBeachTowel,
@@ -3223,10 +4015,22 @@ var RENDERERS = {
   scarecrowAutumn: svgScarecrowAutumn,
   harvestBasket: svgHarvestBasket,
   hotDrink: svgHotDrink,
-  autumnWreath: svgAutumnWreath
+  autumnWreath: svgAutumnWreath,
+  pumpkinPatch: svgPumpkinPatch,
+  hayMaze: svgHayMaze,
+  appleBasket: svgAppleBasket,
+  rake: svgRake
 };
-function renderSeasonalTerrainAssets(isoCells, seed, weekPalettes, variantSeed, biomeMap, seasonRotation) {
-  const placed = selectAssets(isoCells, seed, variantSeed, biomeMap, seasonRotation);
+function renderSeasonalTerrainAssets(isoCells, seed, weekPalettes, variantSeed, biomeMap, seasonRotation, density = 5, excludeCells) {
+  const placed = selectAssets(
+    isoCells,
+    seed,
+    variantSeed,
+    biomeMap,
+    seasonRotation,
+    density,
+    excludeCells
+  );
   const svgParts = placed.map((a) => {
     const weekIdx = Math.min(a.cell.week, weekPalettes.length - 1);
     const palette = weekPalettes[weekIdx];
@@ -3240,6 +4044,292 @@ function renderAssetCSS() {
   return [
     `@keyframes tree-sway { 0% { transform: rotate(-1.5deg); } 50% { transform: rotate(1.5deg); } 100% { transform: rotate(-1.5deg); } }`
   ].join("\n");
+}
+
+// src/themes/terrain/epics.ts
+var TIER_CONFIG = {
+  rare: {
+    minLevel: 88,
+    minRichness: 0.45,
+    baseChance: 0.018,
+    glowColor: "#FFD700",
+    statsGate: (s) => s.total >= 200 || s.longestStreak >= 7
+  },
+  epic: {
+    minLevel: 93,
+    minRichness: 0.55,
+    baseChance: 8e-3,
+    glowColor: "#9B59B6",
+    statsGate: (s) => s.total >= 500 && s.longestStreak >= 14
+  },
+  legendary: {
+    minLevel: 97,
+    minRichness: 0.65,
+    baseChance: 3e-3,
+    glowColor: "#00CED1",
+    statsGate: (s) => s.total >= 1e3 && s.longestStreak >= 30
+  }
+};
+var EPIC_BUILDINGS = [
+  // Rare (14) — 9 natural, 5 landmark
+  { type: "mountFuji", tier: "rare" },
+  { type: "colosseum", tier: "rare" },
+  { type: "giantSequoia", tier: "rare" },
+  { type: "coralReef", tier: "rare" },
+  { type: "pagoda", tier: "rare" },
+  { type: "torii", tier: "rare" },
+  { type: "geyser", tier: "rare" },
+  { type: "hotSpring", tier: "rare" },
+  { type: "eiffelTower", tier: "rare" },
+  { type: "grandCanyon", tier: "rare" },
+  { type: "windmillGrand", tier: "rare" },
+  { type: "oasis", tier: "rare" },
+  { type: "volcano", tier: "rare" },
+  { type: "giantMushroom", tier: "rare" },
+  // Epic (10) — 7 natural, 3 landmark
+  { type: "aurora", tier: "epic" },
+  { type: "tajMahal", tier: "epic" },
+  { type: "giantWaterfall", tier: "epic" },
+  { type: "stBasils", tier: "epic" },
+  { type: "bambooGrove", tier: "epic" },
+  { type: "operaHouse", tier: "epic" },
+  { type: "glacierPeak", tier: "epic" },
+  { type: "bioluminescentPool", tier: "epic" },
+  { type: "meteorCrater", tier: "epic" },
+  { type: "bonsaiGiant", tier: "epic" },
+  // Legendary (6) — 5 natural, 1 structure
+  { type: "floatingIsland", tier: "legendary" },
+  { type: "crystalSpire", tier: "legendary" },
+  { type: "dragonNest", tier: "legendary" },
+  { type: "worldTree", tier: "legendary" },
+  { type: "sakuraEternal", tier: "legendary" },
+  { type: "ancientPortal", tier: "legendary" }
+];
+var MAX_EPIC_BUDGET = 3;
+var MIN_MANHATTAN_DISTANCE = 3;
+function manhattanDistance(a, w, d) {
+  return Math.abs(a.week - w) + Math.abs(a.day - d);
+}
+function selectEpicBuildings(isoCells, seed, stats, biomeMap) {
+  const epicSeed = hash(String(seed) + "epic");
+  const rng = seededRandom(epicSeed);
+  const placed = [];
+  const epicCells = /* @__PURE__ */ new Set();
+  const cellMap = /* @__PURE__ */ new Map();
+  for (const cell of isoCells) {
+    cellMap.set(`${cell.week},${cell.day}`, cell);
+  }
+  const passedTiers = /* @__PURE__ */ new Set();
+  for (const tier of ["legendary", "epic", "rare"]) {
+    if (TIER_CONFIG[tier].statsGate(stats)) {
+      passedTiers.add(tier);
+    }
+  }
+  const eligibleBuildings = EPIC_BUILDINGS.filter((b) => passedTiers.has(b.tier));
+  if (eligibleBuildings.length === 0) return { placed, epicCells };
+  let streakMultiplier = 1;
+  if (stats.currentStreak >= 30) streakMultiplier = 1.44;
+  else if (stats.currentStreak >= 7) streakMultiplier = 1.15;
+  const shuffled = [...isoCells];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  for (const cell of shuffled) {
+    if (placed.length >= MAX_EPIC_BUDGET) break;
+    const key = `${cell.week},${cell.day}`;
+    const biome = biomeMap?.get(key);
+    if (biome?.isRiver || biome?.isPond) continue;
+    const tooClose = placed.some(
+      (p) => manhattanDistance(p, cell.week, cell.day) < MIN_MANHATTAN_DISTANCE
+    );
+    if (tooClose) continue;
+    const richness = computeRichness(cell, cellMap);
+    for (const tier of ["legendary", "epic", "rare"]) {
+      if (!passedTiers.has(tier)) continue;
+      const config = TIER_CONFIG[tier];
+      if (cell.level100 < config.minLevel) continue;
+      if (richness < config.minRichness) continue;
+      const richnessExcess = richness - config.minRichness;
+      const richnessBonus = 1 + Math.min(richnessExcess * 2, 0.5);
+      const finalChance = config.baseChance * richnessBonus * streakMultiplier;
+      if (rng() < finalChance) {
+        const tierBuildings = eligibleBuildings.filter((b) => b.tier === tier);
+        const building = tierBuildings[Math.floor(rng() * tierBuildings.length)];
+        placed.push({
+          type: building.type,
+          tier,
+          week: cell.week,
+          day: cell.day,
+          cx: cell.isoX,
+          cy: cell.isoY
+        });
+        epicCells.add(key);
+        break;
+      }
+      break;
+    }
+  }
+  return { placed, epicCells };
+}
+function renderMountFuji(x, y, c) {
+  return `<g transform="translate(${x},${y})"><ellipse cx="0" cy="0.2" rx="5" ry="1" fill="${c.shadow}" opacity="0.15"/><polygon points="-7,0 0,-13 7,0" fill="${c.boulder}"/><polygon points="0,-13 7,0 0,0" fill="${c.rock}" opacity="0.6"/><line x1="-4" y1="-4" x2="4" y2="-4" stroke="${c.rock}" stroke-width="0.3" opacity="0.4"/><line x1="-3" y1="-7" x2="3" y2="-7" stroke="${c.rock}" stroke-width="0.25" opacity="0.35"/><polygon points="-3,-9 0,-13 3,-9" fill="${c.snowCap}"/><polygon points="0,-13 3,-9 0,-9" fill="${c.snowGround}" opacity="0.7"/><path d="M-3,-9 Q-2,-8 -1,-8.6 Q0,-8 1,-8.6 Q2,-8 3,-9" fill="${c.snowCap}" opacity="0.5"/><circle cx="-4" cy="-2" r="0.8" fill="${c.epicJade}" opacity="0.5"/><circle cx="-2.5" cy="-2.5" r="0.7" fill="${c.epicJade}" opacity="0.45"/><circle cx="3" cy="-2" r="0.7" fill="${c.epicJade}" opacity="0.4"/></g>`;
+}
+function renderGiantSequoia(x, y, c) {
+  return `<g transform="translate(${x},${y})"><ellipse cx="0" cy="0.2" rx="3.5" ry="0.8" fill="${c.shadow}" opacity="0.15"/><path d="M-2.5,0 Q-2.2,-0.8 -1.8,-1" stroke="${c.trunk}" stroke-width="0.6" fill="none"/><path d="M2.5,0 Q2.2,-0.8 1.8,-1" stroke="${c.trunk}" stroke-width="0.6" fill="none"/><rect x="-1.8" y="-7" width="3.6" height="7" fill="${c.trunk}" rx="0.6"/><rect x="-0.5" y="-7" width="1" height="7" fill="${c.trunk}" opacity="0.5"/><line x1="-1.8" y1="-4" x2="-2.8" y2="-4.5" stroke="${c.trunk}" stroke-width="0.5"/><line x1="1.8" y1="-5" x2="2.6" y2="-5.5" stroke="${c.trunk}" stroke-width="0.4"/><ellipse cx="0" cy="-9" rx="5.5" ry="3.5" fill="${c.bushDark}"/><ellipse cx="0" cy="-9" rx="5" ry="3.2" fill="${c.epicJade}"/><ellipse cx="-1.5" cy="-11" rx="3.5" ry="2.5" fill="${c.epicJade}" opacity="0.85"/><ellipse cx="1.5" cy="-11" rx="3" ry="2.2" fill="${c.leaf}" opacity="0.6"/><ellipse cx="0" cy="-12.5" rx="2.5" ry="1.8" fill="${c.leafLight}" opacity="0.5"/></g>`;
+}
+function renderCoralReef(x, y, c) {
+  return `<g transform="translate(${x},${y})"><ellipse cx="0" cy="0.3" rx="5.5" ry="1.2" fill="${c.shadow}" opacity="0.12"/><ellipse cx="0" cy="0" rx="5" ry="1.5" fill="${c.coral}" opacity="0.3"/><path d="M-3,0 L-3,-4 L-4,-5.5 M-3,-3 L-2,-5" stroke="${c.coral}" stroke-width="0.8" fill="none"/><path d="M1,0 L1,-5 L0,-7 M1,-3 L2.2,-5.5" stroke="${c.epicMagic}" stroke-width="0.7" fill="none"/><path d="M3.5,0 Q3,-2 4.5,-4 Q5,-3 5.5,-4 Q5,-1.5 3.5,0" fill="${c.epicPortal}" opacity="0.5"/><circle cx="-4" cy="-5.8" r="1" fill="${c.coral}"/><circle cx="-2" cy="-5.3" r="0.7" fill="${c.coral}" opacity="0.8"/><circle cx="0" cy="-7.2" r="1.1" fill="${c.epicMagic}"/><circle cx="2.2" cy="-5.8" r="0.8" fill="${c.epicMagic}" opacity="0.8"/><path d="M-1,-3 L0.2,-3.4 L-1,-3.8 Z" fill="${c.epicGold}" opacity="0.7"/><path d="M-1.3,-3.2 L-1,-3.4 L-1.3,-3.6" fill="${c.epicGold}" opacity="0.5"/><circle cx="1.5" cy="-6" r="0.2" fill="${c.epicCrystal}" opacity="0.3"/><circle cx="0.5" cy="-8" r="0.15" fill="${c.epicCrystal}" opacity="0.25"/></g>`;
+}
+function renderGeyser(x, y, c) {
+  return `<g transform="translate(${x},${y})"><ellipse cx="0" cy="0.2" rx="3.5" ry="0.8" fill="${c.shadow}" opacity="0.15"/><ellipse cx="0" cy="0" rx="3.5" ry="1.4" fill="${c.rock}"/><ellipse cx="0" cy="-0.3" rx="2.5" ry="1" fill="${c.boulder}"/><ellipse cx="0" cy="-0.2" rx="1.5" ry="0.5" fill="${c.epicGold}" opacity="0.2"/><path d="M-1,-1 Q-0.6,-5 0,-9 Q0.6,-5 1,-1" fill="${c.epicCrystal}" opacity="0.45"/><path d="M-0.5,-1 Q0,-6 0.5,-1" fill="${c.epicCrystal}" opacity="0.25"/><circle cx="-1.5" cy="-9" r="0.6" fill="${c.epicCrystal}" opacity="0.3"/><circle cx="1.2" cy="-9.5" r="0.5" fill="${c.epicCrystal}" opacity="0.25"/><circle cx="0" cy="-10.5" r="0.7" fill="${c.epicCrystal}" opacity="0.2"/><circle cx="-0.8" cy="-11" r="0.4" fill="${c.epicCrystal}" opacity="0.15"/><path d="M-2,-7 Q-2.5,-8.5 -1.5,-9.5" stroke="${c.epicCrystal}" stroke-width="0.3" fill="none" opacity="0.2"/><path d="M1.5,-8 Q2,-9.5 1,-10" stroke="${c.epicCrystal}" stroke-width="0.25" fill="none" opacity="0.18"/></g>`;
+}
+function renderHotSpring(x, y, c) {
+  return `<g transform="translate(${x},${y})"><ellipse cx="0" cy="0.3" rx="5" ry="1.2" fill="${c.shadow}" opacity="0.12"/><ellipse cx="0" cy="0" rx="5" ry="2.2" fill="${c.rock}"/><circle cx="-3.5" cy="-0.5" r="1" fill="${c.boulder}" opacity="0.6"/><circle cx="3.5" cy="-0.3" r="0.9" fill="${c.boulder}" opacity="0.55"/><circle cx="0" cy="-1.8" r="0.7" fill="${c.boulder}" opacity="0.5"/><ellipse cx="0" cy="-0.3" rx="3.8" ry="1.6" fill="none" stroke="${c.epicGold}" stroke-width="0.3" opacity="0.2"/><ellipse cx="0" cy="-0.3" rx="3.5" ry="1.5" fill="${c.epicCrystal}" opacity="0.45"/><ellipse cx="0" cy="-0.5" rx="2" ry="0.8" fill="${c.epicPortal}" opacity="0.25"/><path d="M-1.5,-1 Q-2,-3 -1,-4.5" stroke="${c.epicCrystal}" stroke-width="0.3" fill="none" opacity="0.35"/><path d="M0.5,-1 Q0,-3.5 1,-5" stroke="${c.epicCrystal}" stroke-width="0.3" fill="none" opacity="0.3"/><path d="M2,-0.8 Q2.5,-2.5 2,-4" stroke="${c.epicCrystal}" stroke-width="0.25" fill="none" opacity="0.25"/></g>`;
+}
+function renderGrandCanyon(x, y, c) {
+  return `<g transform="translate(${x},${y})"><ellipse cx="0" cy="0.3" rx="6" ry="1" fill="${c.shadow}" opacity="0.12"/><polygon points="-6,0 -5,-7 -3,-6 -2,-8 -1,-4" fill="${c.boulder}"/><polygon points="-6,0 -5,-5 -3,-4 -1,-4 -1,0" fill="${c.rock}" opacity="0.7"/><line x1="-5.5" y1="-2" x2="-1.5" y2="-2" stroke="${c.epicGold}" stroke-width="0.3" opacity="0.3"/><line x1="-5" y1="-4" x2="-2" y2="-4" stroke="${c.rock}" stroke-width="0.25" opacity="0.4"/><polygon points="1,-4 2,-8 3,-6 5,-7 6,0" fill="${c.boulder}"/><polygon points="1,-4 1,0 6,0 5,-5 3,-4" fill="${c.rock}" opacity="0.7"/><line x1="1.5" y1="-2" x2="5.5" y2="-2" stroke="${c.epicGold}" stroke-width="0.3" opacity="0.3"/><line x1="2" y1="-4" x2="5" y2="-4" stroke="${c.rock}" stroke-width="0.25" opacity="0.4"/><path d="M-0.8,0 Q0,-0.3 0.8,0" fill="${c.epicCrystal}" opacity="0.4"/><circle cx="-5" cy="-7.3" r="0.5" fill="${c.epicJade}" opacity="0.4"/><circle cx="4.5" cy="-7.3" r="0.4" fill="${c.epicJade}" opacity="0.35"/></g>`;
+}
+function renderOasis(x, y, c) {
+  return `<g transform="translate(${x},${y})"><ellipse cx="0" cy="0.3" rx="5" ry="1.2" fill="${c.shadow}" opacity="0.12"/><ellipse cx="0" cy="0.2" rx="5.5" ry="2" fill="${c.epicGold}" opacity="0.15"/><ellipse cx="0" cy="0" rx="4" ry="1.5" fill="${c.epicCrystal}" opacity="0.5"/><ellipse cx="0" cy="-0.2" rx="3" ry="1" fill="${c.epicCrystal}" opacity="0.3"/><path d="M-2.5,0 Q-2.8,-3 -2.2,-6" stroke="${c.trunk}" stroke-width="0.7" fill="none"/><path d="M-2.2,-6 Q-4.5,-5.5 -5.5,-4.5" stroke="${c.palm}" stroke-width="0.5" fill="none"/><path d="M-2.2,-6 Q-0.5,-5.5 0.5,-5.5" stroke="${c.palm}" stroke-width="0.5" fill="none"/><path d="M-2.2,-6 Q-3.5,-5 -4,-3.5" stroke="${c.palm}" stroke-width="0.4" fill="none"/><path d="M-2.2,-6 Q-1,-7 0,-7" stroke="${c.palm}" stroke-width="0.4" fill="none"/><path d="M2,0 Q2.3,-2.5 1.8,-5" stroke="${c.trunk}" stroke-width="0.6" fill="none"/><path d="M1.8,-5 Q4,-4.5 4.5,-3.5" stroke="${c.palm}" stroke-width="0.45" fill="none"/><path d="M1.8,-5 Q0,-4.5 -0.8,-4.5" stroke="${c.palm}" stroke-width="0.45" fill="none"/><path d="M1.8,-5 Q3,-3.5 3.5,-2.5" stroke="${c.palm}" stroke-width="0.35" fill="none"/></g>`;
+}
+function renderColosseum(x, y, c) {
+  return `<g transform="translate(${x},${y})"><ellipse cx="0" cy="0.3" rx="5.5" ry="1.2" fill="${c.shadow}" opacity="0.15"/><ellipse cx="0" cy="-2" rx="5.5" ry="3.2" fill="${c.epicMarble}"/><ellipse cx="0" cy="-2.5" rx="3.5" ry="1.8" fill="${c.wallShade}" opacity="0.5"/><line x1="-4" y1="-5" x2="-4" y2="-2" stroke="${c.wall}" stroke-width="0.4"/><line x1="-2" y1="-5.5" x2="-2" y2="-2.5" stroke="${c.wall}" stroke-width="0.4"/><line x1="0" y1="-5.5" x2="0" y2="-2.5" stroke="${c.wall}" stroke-width="0.4"/><line x1="2" y1="-5.5" x2="2" y2="-2.5" stroke="${c.wall}" stroke-width="0.4"/><line x1="4" y1="-5" x2="4" y2="-2" stroke="${c.wall}" stroke-width="0.4"/><path d="M-4,-4.5 Q-3,-5.5 -2,-4.8" fill="none" stroke="${c.wall}" stroke-width="0.3"/><path d="M-2,-5 Q-1,-5.8 0,-5" fill="none" stroke="${c.wall}" stroke-width="0.3"/><path d="M0,-5 Q1,-5.8 2,-5" fill="none" stroke="${c.wall}" stroke-width="0.3"/><path d="M2,-4.8 Q3,-5.5 4,-4.5" fill="none" stroke="${c.wall}" stroke-width="0.3"/></g>`;
+}
+function renderPagoda(x, y, c) {
+  return `<g transform="translate(${x},${y})"><ellipse cx="0" cy="0.2" rx="3" ry="0.6" fill="${c.shadow}" opacity="0.15"/><rect x="-2.5" y="-3" width="5" height="3" fill="${c.epicMarble}"/><rect x="-2.5" y="-3" width="2.5" height="3" fill="${c.wallShade}" opacity="0.2"/><path d="M-4.5,-3 Q-3,-4 0,-4.5 Q3,-4 4.5,-3" fill="${c.roofA}"/><rect x="-1.8" y="-7" width="3.6" height="2.5" fill="${c.epicMarble}"/><path d="M-3.5,-7 Q-2,-8 0,-8.2 Q2,-8 3.5,-7" fill="${c.roofA}"/><rect x="-1.2" y="-10.5" width="2.4" height="2.3" fill="${c.epicMarble}"/><path d="M-2.5,-10.5 Q-1,-11.5 0,-11.8 Q1,-11.5 2.5,-10.5" fill="${c.roofA}"/><line x1="0" y1="-11.8" x2="0" y2="-13.5" stroke="${c.epicGold}" stroke-width="0.4"/><circle cx="0" cy="-13.7" r="0.3" fill="${c.epicGold}"/><circle cx="0" cy="-2" r="0.4" fill="${c.wallShade}" opacity="0.5"/><circle cx="0" cy="-6" r="0.3" fill="${c.wallShade}" opacity="0.4"/></g>`;
+}
+function renderTorii(x, y, c) {
+  return `<g transform="translate(${x},${y})"><ellipse cx="0" cy="0.2" rx="4" ry="0.7" fill="${c.shadow}" opacity="0.15"/><rect x="-4.5" y="-0.5" width="1.5" height="0.5" fill="${c.rock}" rx="0.2"/><rect x="3" y="-0.5" width="1.5" height="0.5" fill="${c.rock}" rx="0.2"/><path d="M-4.2,-0.5 L-3.8,-8 L-3.3,-8 L-3.5,-0.5 Z" fill="${c.roofA}"/><path d="M3.5,-0.5 L3.3,-8 L3.8,-8 L4.2,-0.5 Z" fill="${c.roofA}"/><path d="M-5.5,-7.5 Q0,-9.5 5.5,-7.5" stroke="${c.roofA}" stroke-width="1" fill="none"/><path d="M-5.5,-7.5 Q0,-9 5.5,-7.5" fill="${c.roofA}"/><rect x="-4.2" y="-6.5" width="8.4" height="0.5" fill="${c.roofA}"/><rect x="-0.8" y="-7.5" width="1.6" height="1.5" fill="${c.epicGold}" opacity="0.3" rx="0.1"/></g>`;
+}
+function renderEiffelTower(x, y, c) {
+  return `<g transform="translate(${x},${y})"><ellipse cx="0" cy="0.2" rx="2.5" ry="0.5" fill="${c.shadow}" opacity="0.15"/><path d="M-3.5,0 Q-1.75,-2 0,0" fill="none" stroke="${c.boulder}" stroke-width="0.4"/><path d="M0,0 Q1.75,-2 3.5,0" fill="none" stroke="${c.boulder}" stroke-width="0.4"/><line x1="-3.5" y1="0" x2="-0.6" y2="-10" stroke="${c.boulder}" stroke-width="0.5"/><line x1="3.5" y1="0" x2="0.6" y2="-10" stroke="${c.boulder}" stroke-width="0.5"/><line x1="-2.5" y1="-3" x2="2.5" y2="-3" stroke="${c.boulder}" stroke-width="0.3"/><line x1="-1.8" y1="-5.5" x2="1.8" y2="-5.5" stroke="${c.boulder}" stroke-width="0.3"/><line x1="-2.5" y1="-3" x2="1.8" y2="-5.5" stroke="${c.boulder}" stroke-width="0.15" opacity="0.5"/><line x1="2.5" y1="-3" x2="-1.8" y2="-5.5" stroke="${c.boulder}" stroke-width="0.15" opacity="0.5"/><rect x="-2" y="-5.8" width="4" height="0.5" fill="${c.boulder}"/><line x1="0" y1="-10" x2="0" y2="-14" stroke="${c.boulder}" stroke-width="0.4"/><rect x="-0.8" y="-10.3" width="1.6" height="0.5" fill="${c.boulder}"/><line x1="0" y1="-14" x2="0" y2="-14.5" stroke="${c.epicGold}" stroke-width="0.2"/></g>`;
+}
+function renderWindmillGrand(x, y, c) {
+  return `<g transform="translate(${x},${y})"><ellipse cx="0" cy="0.2" rx="2.5" ry="0.5" fill="${c.shadow}" opacity="0.15"/><polygon points="-2.5,0 -1.5,-8 1.5,-8 2.5,0" fill="${c.windmill}"/><polygon points="-2.5,0 -1.5,-8 0,-8 0,0" fill="${c.wallShade}" opacity="0.15"/><polygon points="-2,-8 0,-10.5 2,-8" fill="${c.roofA}"/><rect x="-0.6" y="-1.5" width="1.2" height="1.5" fill="${c.wallShade}" opacity="0.4" rx="0.6" ry="0"/><circle cx="0" cy="-5" r="0.5" fill="${c.wallShade}" opacity="0.3"/><g transform="translate(0,-7.5)"><g><polygon points="-0.4,0 -0.2,-6 0.2,-6 0.4,0" fill="${c.windBlade}" opacity="0.85"/><polygon points="0,-0.4 6,-0.2 6,0.2 0,0.4" fill="${c.windBlade}" opacity="0.85"/><polygon points="-0.4,0 -0.2,6 0.2,6 0.4,0" fill="${c.windBlade}" opacity="0.85"/><polygon points="0,-0.4 -6,-0.2 -6,0.2 0,0.4" fill="${c.windBlade}" opacity="0.85"/><animateTransform attributeName="transform" type="rotate" values="0;360" dur="6s" repeatCount="indefinite"/></g></g><circle cx="0" cy="-7.5" r="0.6" fill="${c.boulder}"/></g>`;
+}
+function renderVolcano(x, y, c) {
+  return `<g transform="translate(${x},${y})"><ellipse cx="0" cy="0.3" rx="5.5" ry="1.2" fill="${c.shadow}" opacity="0.15"/><polygon points="-6,0 -1.8,-9 1.8,-9 6,0" fill="${c.boulder}"/><polygon points="0,-9 1.8,-9 6,0 0,0" fill="${c.rock}" opacity="0.5"/><line x1="-4" y1="-3" x2="4" y2="-3" stroke="${c.rock}" stroke-width="0.25" opacity="0.3"/><ellipse cx="0" cy="-9" rx="2" ry="0.8" fill="#ff4500"/><ellipse cx="0" cy="-9" rx="1.2" ry="0.5" fill="#ff8c00"/><ellipse cx="0" cy="-9" rx="0.6" ry="0.25" fill="#ffcc00" opacity="0.7"/><path d="M0.5,-9 Q1,-7 0.8,-5" stroke="#ff4500" stroke-width="0.4" fill="none" opacity="0.6"/><circle cx="-0.5" cy="-10.5" r="0.5" fill="${c.rock}" opacity="0.3"/><circle cx="0.5" cy="-11.5" r="0.6" fill="${c.rock}" opacity="0.25"/><circle cx="-0.2" cy="-12.5" r="0.4" fill="${c.rock}" opacity="0.2"/></g>`;
+}
+function renderGiantMushroom(x, y, c) {
+  return `<g transform="translate(${x},${y})"><ellipse cx="0" cy="0.2" rx="3" ry="0.6" fill="${c.shadow}" opacity="0.15"/><rect x="-1.2" y="-5" width="2.4" height="5" fill="${c.mushroom}" rx="0.4"/><ellipse cx="0" cy="-2" rx="1.3" ry="0.3" fill="${c.mushroom}" opacity="0.5"/><ellipse cx="0" cy="-5" rx="5" ry="1.2" fill="${c.mushroom}" opacity="0.6"/><line x1="-3" y1="-5" x2="-1" y2="-5" stroke="${c.mushroom}" stroke-width="0.15" opacity="0.4"/><line x1="1" y1="-5" x2="3" y2="-5" stroke="${c.mushroom}" stroke-width="0.15" opacity="0.4"/><ellipse cx="0" cy="-6.5" rx="5" ry="3.2" fill="${c.mushroomCap}"/><ellipse cx="-1" cy="-7.5" rx="2" ry="1" fill="${c.mushroomCap}" opacity="0.4"/><circle cx="-2.5" cy="-7" r="0.7" fill="${c.mushroom}" opacity="0.5"/><circle cx="1.8" cy="-6.5" r="0.6" fill="${c.mushroom}" opacity="0.45"/><circle cx="0" cy="-8.5" r="0.5" fill="${c.mushroom}" opacity="0.4"/><circle cx="-1" cy="-5.5" r="0.4" fill="${c.mushroom}" opacity="0.35"/></g>`;
+}
+function renderAurora(x, y, c) {
+  return `<g transform="translate(${x},${y})"><ellipse cx="0" cy="0" rx="5" ry="1.5" fill="${c.snowGround}" opacity="0.3"/><path d="M-6,-2 Q-3,-8 0,-5 Q3,-9 6,-3" stroke="${c.epicJade}" stroke-width="1.5" fill="none" opacity="0.4" class="epic-glow-pulse"/><path d="M-5,-3 Q-2,-10 1,-6 Q4,-11 6,-4" stroke="${c.epicPortal}" stroke-width="1" fill="none" opacity="0.35" class="epic-glow-pulse"/><path d="M-6,-1 Q-3,-6 0,-4 Q3,-7 5,-2" stroke="${c.epicMagic}" stroke-width="0.8" fill="none" opacity="0.3"/><path d="M-4,-4 Q-1,-11 2,-7 Q5,-12 6,-5" stroke="${c.epicCrystal}" stroke-width="0.6" fill="none" opacity="0.25" class="epic-glow-pulse"/><polygon points="-4,0 -3.5,-2 -3,0" fill="${c.epicJade}" opacity="0.4"/><polygon points="-2,0 -1.5,-2.5 -1,0" fill="${c.epicJade}" opacity="0.35"/><polygon points="2.5,0 3,-1.8 3.5,0" fill="${c.epicJade}" opacity="0.35"/><circle cx="-3" cy="-10" r="0.2" fill="${c.epicCrystal}" opacity="0.5"/><circle cx="2" cy="-11" r="0.15" fill="${c.epicCrystal}" opacity="0.4"/><circle cx="4.5" cy="-9" r="0.18" fill="${c.epicCrystal}" opacity="0.45"/></g>`;
+}
+function renderGiantWaterfall(x, y, c) {
+  return `<g transform="translate(${x},${y})"><ellipse cx="0" cy="0.5" rx="5" ry="1" fill="${c.shadow}" opacity="0.12"/><rect x="-5.5" y="-10" width="4" height="10" fill="${c.boulder}"/><rect x="-5.5" y="-10" width="2" height="10" fill="${c.rock}" opacity="0.3"/><rect x="1.5" y="-10" width="4" height="10" fill="${c.rock}"/><rect x="3.5" y="-10" width="2" height="10" fill="${c.boulder}" opacity="0.3"/><rect x="-1.5" y="-10" width="3" height="10" fill="${c.epicCrystal}" opacity="0.45"/><rect x="-0.6" y="-10" width="1.2" height="10" fill="${c.epicCrystal}" opacity="0.25"/><line x1="-1" y1="-4" x2="1" y2="-4" stroke="${c.epicCrystal}" stroke-width="0.2" opacity="0.3"/><line x1="-0.8" y1="-7" x2="0.8" y2="-7" stroke="${c.epicCrystal}" stroke-width="0.15" opacity="0.25"/><ellipse cx="0" cy="-10.5" rx="6" ry="1.5" fill="${c.epicJade}"/><ellipse cx="-1" cy="0.5" rx="2.5" ry="0.8" fill="${c.epicCrystal}" opacity="0.2"/><ellipse cx="1" cy="0.3" rx="2" ry="0.6" fill="${c.epicCrystal}" opacity="0.15"/><circle cx="-3" cy="0" r="0.6" fill="${c.boulder}" opacity="0.5"/><circle cx="3.5" cy="0.2" r="0.5" fill="${c.rock}" opacity="0.4"/></g>`;
+}
+function renderBambooGrove(x, y, c) {
+  return `<g transform="translate(${x},${y})"><ellipse cx="0" cy="0.2" rx="3.5" ry="0.7" fill="${c.shadow}" opacity="0.12"/><line x1="-3" y1="0" x2="-3" y2="-11" stroke="${c.epicJade}" stroke-width="0.7"/><line x1="-1.5" y1="0" x2="-1.5" y2="-13" stroke="${c.epicJade}" stroke-width="0.6"/><line x1="0" y1="0" x2="0" y2="-12" stroke="${c.epicJade}" stroke-width="0.7"/><line x1="1.5" y1="0" x2="1.5" y2="-11.5" stroke="${c.epicJade}" stroke-width="0.6"/><line x1="3" y1="0" x2="3" y2="-10" stroke="${c.epicJade}" stroke-width="0.65"/><line x1="-3.4" y1="-4" x2="-2.6" y2="-4" stroke="${c.leaf}" stroke-width="0.3"/><line x1="-3.4" y1="-7" x2="-2.6" y2="-7" stroke="${c.leaf}" stroke-width="0.3"/><line x1="-1.9" y1="-5" x2="-1.1" y2="-5" stroke="${c.leaf}" stroke-width="0.3"/><line x1="-1.9" y1="-9" x2="-1.1" y2="-9" stroke="${c.leaf}" stroke-width="0.3"/><line x1="-0.4" y1="-6" x2="0.4" y2="-6" stroke="${c.leaf}" stroke-width="0.3"/><line x1="1.1" y1="-4.5" x2="1.9" y2="-4.5" stroke="${c.leaf}" stroke-width="0.3"/><line x1="2.6" y1="-5" x2="3.4" y2="-5" stroke="${c.leaf}" stroke-width="0.3"/><path d="M-3,-7 Q-4.5,-7 -5.5,-6.5" stroke="${c.leaf}" stroke-width="0.35" fill="none"/><path d="M-1.5,-9 Q-3,-9 -4,-8.5" stroke="${c.leaf}" stroke-width="0.3" fill="none"/><path d="M0,-6 Q1.5,-6 2.5,-5.5" stroke="${c.leaf}" stroke-width="0.3" fill="none"/><path d="M1.5,-4.5 Q3,-4.5 4,-4" stroke="${c.leaf}" stroke-width="0.3" fill="none"/><path d="M3,-5 Q4.5,-5 5,-4.5" stroke="${c.leaf}" stroke-width="0.25" fill="none"/></g>`;
+}
+function renderGlacierPeak(x, y, c) {
+  return `<g transform="translate(${x},${y})"><ellipse cx="0" cy="0.3" rx="5" ry="1" fill="${c.shadow}" opacity="0.12"/><polygon points="-6,0 -1,-10 1,-10 6,0" fill="${c.ice}"/><polygon points="0,-10 1,-10 6,0 0,0" fill="${c.snowGround}" opacity="0.5"/><polygon points="-1,-10 0,-13.5 1,-10" fill="${c.snowCap}"/><polygon points="-3.5,-5 -2.5,-8 -1.5,-5" fill="${c.icicle}" opacity="0.5"/><polygon points="2,-4 3,-7.5 4,-4" fill="${c.icicle}" opacity="0.45"/><path d="M-5,-2 Q-3,-3 -1,-2 Q1,-3 3,-2 Q5,-3 6,0" fill="${c.snowCap}" opacity="0.25"/><line x1="-2" y1="-3" x2="-1" y2="-5.5" stroke="${c.epicCrystal}" stroke-width="0.25" opacity="0.4"/><line x1="1.5" y1="-2" x2="2" y2="-4" stroke="${c.epicCrystal}" stroke-width="0.2" opacity="0.35"/><line x1="-3" y1="-1" x2="-3.2" y2="0" stroke="${c.icicle}" stroke-width="0.3" opacity="0.4"/><line x1="3.5" y1="-1" x2="3.7" y2="0" stroke="${c.icicle}" stroke-width="0.25" opacity="0.35"/></g>`;
+}
+function renderBioluminescentPool(x, y, c) {
+  return `<g transform="translate(${x},${y})"><ellipse cx="0" cy="0.3" rx="5.5" ry="1.2" fill="${c.shadow}" opacity="0.1"/><ellipse cx="0" cy="0" rx="5.5" ry="2.2" fill="${c.boulder}"/><circle cx="-4" cy="-0.5" r="0.8" fill="${c.rock}" opacity="0.5"/><circle cx="4" cy="-0.3" r="0.7" fill="${c.rock}" opacity="0.45"/><ellipse cx="0" cy="-0.3" rx="4" ry="1.5" fill="${c.epicPortal}" opacity="0.4" class="epic-glow-pulse"/><ellipse cx="0" cy="-0.5" rx="2.5" ry="0.9" fill="${c.epicPortal}" opacity="0.3" class="epic-glow-pulse"/><circle cx="-1.5" cy="-0.3" r="0.3" fill="${c.epicPortal}" opacity="0.6" class="epic-glow-pulse"/><circle cx="1.2" cy="-0.5" r="0.25" fill="${c.epicCrystal}" opacity="0.5" class="epic-glow-pulse"/><circle cx="0" cy="0.2" r="0.2" fill="${c.epicPortal}" opacity="0.4"/><line x1="-3" y1="-1" x2="-3" y2="-2" stroke="${c.epicPortal}" stroke-width="0.2"/><ellipse cx="-3" cy="-2.2" rx="0.4" ry="0.25" fill="${c.epicPortal}" opacity="0.5" class="epic-glow-pulse"/><line x1="3.5" y1="-0.8" x2="3.5" y2="-1.8" stroke="${c.epicPortal}" stroke-width="0.2"/><ellipse cx="3.5" cy="-2" rx="0.35" ry="0.2" fill="${c.epicCrystal}" opacity="0.45" class="epic-glow-pulse"/></g>`;
+}
+function renderMeteorCrater(x, y, c) {
+  return `<g transform="translate(${x},${y})"><ellipse cx="0" cy="0.3" rx="5.5" ry="1.2" fill="${c.shadow}" opacity="0.12"/><ellipse cx="0" cy="0" rx="5.5" ry="2.8" fill="${c.rock}"/><ellipse cx="0" cy="-0.3" rx="4" ry="1.8" fill="${c.boulder}" opacity="0.7"/><ellipse cx="0" cy="-0.2" rx="2.2" ry="0.9" fill="${c.shadow}" opacity="0.5"/><polygon points="-0.5,-0.5 0.2,-1.2 0.8,-0.3 0.3,0.2" fill="${c.rock}"/><polygon points="-0.5,-0.5 0.2,-1.2 0.8,-0.3 0.3,0.2" fill="${c.epicGold}" opacity="0.3"/><circle cx="0.1" cy="-0.4" r="1" fill="${c.epicGold}" opacity="0.15"/><circle cx="-4.5" cy="-1" r="0.5" fill="${c.rock}" opacity="0.5"/><circle cx="4" cy="0.5" r="0.6" fill="${c.rock}" opacity="0.45"/><circle cx="-2.5" cy="1.2" r="0.35" fill="${c.boulder}" opacity="0.4"/><circle cx="2.5" cy="-1.5" r="0.4" fill="${c.boulder}" opacity="0.35"/><line x1="0" y1="-0.5" x2="-3" y2="-1.5" stroke="${c.shadow}" stroke-width="0.2" opacity="0.3"/><line x1="0" y1="-0.5" x2="2.5" y2="0.5" stroke="${c.shadow}" stroke-width="0.2" opacity="0.25"/></g>`;
+}
+function renderTajMahal(x, y, c) {
+  return `<g transform="translate(${x},${y})"><ellipse cx="0" cy="0.3" rx="5" ry="1" fill="${c.shadow}" opacity="0.15"/><rect x="-5" y="-1" width="10" height="1" fill="${c.epicMarble}" opacity="0.8"/><rect x="-3.5" y="-5" width="7" height="4" fill="${c.epicMarble}"/><rect x="0" y="-5" width="3.5" height="4" fill="${c.wallShade}" opacity="0.1"/><path d="M-1.2,-1 L-1.2,-3.5 Q0,-4.5 1.2,-3.5 L1.2,-1" fill="${c.wallShade}" opacity="0.3"/><path d="M-2.5,-5 Q-2.5,-8 0,-10.5 Q2.5,-8 2.5,-5" fill="${c.epicMarble}"/><line x1="0" y1="-10.5" x2="0" y2="-11.5" stroke="${c.epicGold}" stroke-width="0.3"/><circle cx="0" cy="-11.7" r="0.3" fill="${c.epicGold}"/><rect x="-5.5" y="-8" width="0.8" height="7" fill="${c.epicMarble}"/><circle cx="-5.1" cy="-8.3" r="0.4" fill="${c.epicGold}"/><rect x="4.7" y="-8" width="0.8" height="7" fill="${c.epicMarble}"/><circle cx="5.1" cy="-8.3" r="0.4" fill="${c.epicGold}"/><line x1="-3.5" y1="-3" x2="3.5" y2="-3" stroke="${c.epicGold}" stroke-width="0.2" opacity="0.4"/></g>`;
+}
+function renderStBasils(x, y, c) {
+  return `<g transform="translate(${x},${y})"><ellipse cx="0" cy="0.3" rx="4" ry="0.8" fill="${c.shadow}" opacity="0.15"/><rect x="-3.5" y="-4" width="7" height="4" fill="${c.epicMarble}"/><rect x="-3.5" y="-4" width="3.5" height="4" fill="${c.wallShade}" opacity="0.1"/><rect x="-0.8" y="-7" width="1.6" height="3" fill="${c.epicMarble}"/><path d="M-3,-4 Q-3,-6 -3,-7 Q-3.8,-6 -3.8,-5 Q-3.8,-4.5 -3,-4" fill="${c.roofA}"/><circle cx="-3" cy="-7.3" r="0.25" fill="${c.epicGold}"/><path d="M-0.8,-7 Q-0.8,-9.5 0,-10.5 Q0.8,-9.5 0.8,-7" fill="${c.epicJade}"/><circle cx="0" cy="-10.8" r="0.3" fill="${c.epicGold}"/><path d="M3,-4 Q3,-6 3,-7 Q3.8,-6 3.8,-5 Q3.8,-4.5 3,-4" fill="${c.epicMagic}"/><circle cx="3" cy="-7.3" r="0.25" fill="${c.epicGold}"/><line x1="-3" y1="-5.5" x2="-3" y2="-6.5" stroke="${c.epicGold}" stroke-width="0.15" opacity="0.4"/><line x1="0" y1="-8" x2="0" y2="-9.5" stroke="${c.epicGold}" stroke-width="0.15" opacity="0.4"/><path d="M-0.4,-4.5 Q0,-5.2 0.4,-4.5" fill="${c.wallShade}" opacity="0.4"/></g>`;
+}
+function renderOperaHouse(x, y, c) {
+  return `<g transform="translate(${x},${y})"><ellipse cx="0" cy="0.3" rx="5.5" ry="1" fill="${c.shadow}" opacity="0.15"/><rect x="-5.5" y="-0.5" width="11" height="0.8" fill="${c.epicMarble}" opacity="0.8"/><rect x="-5" y="-1" width="10" height="0.5" fill="${c.epicMarble}"/><path d="M-5,-1 Q-3.5,-7 -2,-1" fill="${c.epicMarble}"/><path d="M-2.5,-1 Q-0.5,-9 1.5,-1" fill="${c.epicMarble}"/><path d="M0.5,-1 Q2.5,-7.5 4,-1" fill="${c.epicMarble}"/><path d="M3,-1 Q4.2,-5 5,-1" fill="${c.epicMarble}"/><path d="M-5,-1 Q-3.5,-7 -2,-1" fill="none" stroke="${c.wall}" stroke-width="0.2" opacity="0.3"/><path d="M-2.5,-1 Q-0.5,-9 1.5,-1" fill="none" stroke="${c.wall}" stroke-width="0.2" opacity="0.3"/><ellipse cx="0" cy="0.8" rx="4" ry="0.5" fill="${c.epicCrystal}" opacity="0.15"/></g>`;
+}
+function renderBonsaiGiant(x, y, c) {
+  return `<g transform="translate(${x},${y})"><ellipse cx="0" cy="0.2" rx="3" ry="0.6" fill="${c.shadow}" opacity="0.15"/><ellipse cx="0" cy="0" rx="2.5" ry="0.8" fill="${c.rock}" opacity="0.5"/><path d="M-0.5,0 Q-1.5,-2 -2,-3.5 Q-2.5,-4.5 -2,-5.5" stroke="${c.trunk}" stroke-width="1.3" fill="none"/><path d="M-1.5,-3 Q0,-4 1.5,-4.5 Q2,-5 2,-6" stroke="${c.trunk}" stroke-width="0.9" fill="none"/><path d="M-2,-5.5 Q-3,-6 -3.5,-6.5" stroke="${c.trunk}" stroke-width="0.5" fill="none"/><ellipse cx="-2.5" cy="-7" rx="2" ry="1.3" fill="${c.bushDark}"/><ellipse cx="-2.5" cy="-7" rx="1.8" ry="1.1" fill="${c.epicJade}"/><ellipse cx="2" cy="-6.5" rx="2.2" ry="1.5" fill="${c.bushDark}"/><ellipse cx="2" cy="-6.5" rx="2" ry="1.3" fill="${c.epicJade}"/><ellipse cx="-0.5" cy="-8.5" rx="1.5" ry="1" fill="${c.bushDark}"/><ellipse cx="-0.5" cy="-8.5" rx="1.3" ry="0.8" fill="${c.epicJade}"/><ellipse cx="-1" cy="-9" rx="0.6" ry="0.4" fill="${c.leafLight}" opacity="0.4"/></g>`;
+}
+function renderFloatingIsland(x, y, c) {
+  return `<g transform="translate(${x},${y})"><polygon points="-3.5,3 -2,1 0,0.5 2,1 3.5,3 1,4.5 -1,4.5" fill="${c.boulder}" opacity="0.7"/><polygon points="-2,1 0,0.5 2,1 1,4 -1,4" fill="${c.rock}" opacity="0.5"/><path d="M-1,3 Q-1.5,5 -1,6" stroke="${c.trunk}" stroke-width="0.3" fill="none" opacity="0.5"/><path d="M0.5,3.5 Q0,5.5 0.5,7" stroke="${c.trunk}" stroke-width="0.25" fill="none" opacity="0.4"/><ellipse cx="0" cy="-1" rx="4.5" ry="1.8" fill="${c.leaf}"/><ellipse cx="0" cy="-1.3" rx="3.5" ry="1.2" fill="${c.epicJade}" opacity="0.5"/><rect x="-0.3" y="-4.5" width="0.6" height="3" fill="${c.trunk}"/><ellipse cx="0" cy="-5.5" rx="2" ry="1.5" fill="${c.bushDark}"/><ellipse cx="0" cy="-5.5" rx="1.8" ry="1.3" fill="${c.epicJade}"/><circle cx="2.5" cy="-1.5" r="0.8" fill="${c.epicJade}" opacity="0.7"/><ellipse cx="-3" cy="0" rx="1.2" ry="0.4" fill="${c.epicCrystal}" opacity="0.15"/><ellipse cx="3.5" cy="1" rx="1" ry="0.3" fill="${c.epicCrystal}" opacity="0.12"/></g>`;
+}
+function renderCrystalSpire(x, y, c) {
+  return `<g transform="translate(${x},${y})"><ellipse cx="0" cy="0.3" rx="3" ry="0.6" fill="${c.shadow}" opacity="0.12"/><polygon points="-3.5,0 -3,-3 -2.5,0" fill="${c.epicCrystal}" opacity="0.4"/><polygon points="3,0 3.5,-2.5 4,0" fill="${c.epicCrystal}" opacity="0.35"/><polygon points="-4.5,0 -4,-2 -3.5,0" fill="${c.epicCrystal}" opacity="0.3"/><polygon points="-2,0 -0.5,-10 0,-13 0,0" fill="${c.epicCrystal}" opacity="0.7"/><polygon points="0,0 0,-13 0.5,-10 2,0" fill="${c.epicCrystal}" opacity="0.5"/><polygon points="-0.5,-3 0,-13 0.5,-3" fill="${c.epicCrystal}" opacity="0.3"/><polygon points="-2.5,0 -1.5,-6 -0.5,0" fill="${c.epicCrystal}" opacity="0.45"/><polygon points="1,0 2,-5 3,0" fill="${c.epicCrystal}" opacity="0.4"/><line x1="-0.3" y1="-8" x2="0.3" y2="-7" stroke="${c.epicCrystal}" stroke-width="0.3" opacity="0.6"/><line x1="-0.5" y1="-5" x2="0.2" y2="-4.5" stroke="${c.epicCrystal}" stroke-width="0.2" opacity="0.5"/><circle cx="0" cy="-13" r="0.4" fill="${c.epicCrystal}" opacity="0.4"/></g>`;
+}
+function renderDragonNest(x, y, c) {
+  return `<g transform="translate(${x},${y})"><ellipse cx="0" cy="0.3" rx="5" ry="1.2" fill="${c.shadow}" opacity="0.15"/><ellipse cx="0" cy="-0.5" rx="5" ry="2" fill="${c.trunk}"/><path d="M-4,-0.5 Q-2,-1.5 0,-0.5 Q2,-1.5 4,-0.5" fill="none" stroke="${c.trunk}" stroke-width="0.5" opacity="0.5"/><path d="M-3.5,0 Q-1.5,-1 0.5,0 Q2.5,-1 4.5,0" fill="none" stroke="${c.trunk}" stroke-width="0.4" opacity="0.4"/><ellipse cx="0" cy="-1" rx="3.5" ry="1.2" fill="${c.trunk}" opacity="0.6"/><ellipse cx="-1.2" cy="-1.5" rx="0.8" ry="1" fill="${c.epicGold}"/><ellipse cx="0.5" cy="-1.5" rx="0.8" ry="1" fill="${c.epicGold}"/><ellipse cx="-0.3" cy="-2" rx="0.7" ry="0.9" fill="${c.epicCrystal}"/><ellipse cx="-1" cy="-1.8" rx="0.2" ry="0.3" fill="${c.epicGold}" opacity="0.3"/><ellipse cx="0.7" cy="-1.8" rx="0.2" ry="0.3" fill="${c.epicGold}" opacity="0.3"/><path d="M3.5,-1 Q4,-3 4.5,-4 Q5.5,-5 5,-6 Q4.5,-5.5 4.5,-5" fill="${c.epicJade}" opacity="0.6"/><path d="M4,-4 Q5.5,-6 6,-4.5 Q5,-3.5 4,-4" fill="${c.epicJade}" opacity="0.4"/><circle cx="4.7" cy="-5.5" r="0.15" fill="${c.epicGold}"/></g>`;
+}
+function renderWorldTree(x, y, c) {
+  return `<g transform="translate(${x},${y})"><ellipse cx="0" cy="0.3" rx="4" ry="0.8" fill="${c.shadow}" opacity="0.15"/><path d="M-1.5,0 Q-3,0.5 -4,0" stroke="${c.trunk}" stroke-width="0.5" fill="none"/><path d="M1.5,0 Q3,0.5 4,0" stroke="${c.trunk}" stroke-width="0.5" fill="none"/><rect x="-2" y="-7" width="4" height="7" fill="${c.trunk}" rx="0.8"/><line x1="-0.5" y1="0" x2="-0.5" y2="-7" stroke="${c.trunk}" stroke-width="0.5" opacity="0.3"/><line x1="1" y1="0" x2="1" y2="-7" stroke="${c.trunk}" stroke-width="0.4" opacity="0.25"/><ellipse cx="0" cy="-9" rx="6" ry="4.5" fill="${c.bushDark}"/><ellipse cx="0" cy="-9" rx="5.5" ry="4" fill="${c.epicJade}"/><ellipse cx="-2" cy="-11" rx="3.5" ry="2.8" fill="${c.epicJade}" opacity="0.85"/><ellipse cx="2" cy="-11" rx="3.5" ry="2.8" fill="${c.epicJade}" opacity="0.8"/><ellipse cx="0" cy="-13" rx="3" ry="2" fill="${c.leaf}" opacity="0.6"/><ellipse cx="-1" cy="-13.5" rx="1.5" ry="0.8" fill="${c.leafLight}" opacity="0.4"/><circle cx="-4" cy="-9" r="0.3" fill="${c.epicGold}" class="epic-glow-pulse"/><circle cx="3" cy="-11" r="0.3" fill="${c.epicGold}" class="epic-glow-pulse"/><circle cx="0" cy="-7.5" r="0.25" fill="${c.epicGold}" class="epic-glow-pulse"/><circle cx="-2" cy="-13" r="0.2" fill="${c.epicGold}" class="epic-glow-pulse"/><circle cx="1.5" cy="-8" r="0.2" fill="${c.epicGold}" class="epic-glow-pulse"/></g>`;
+}
+function renderSakuraEternal(x, y, c) {
+  return `<g transform="translate(${x},${y})"><ellipse cx="0" cy="0.3" rx="4" ry="0.8" fill="${c.shadow}" opacity="0.15"/><path d="M0,0 Q-0.5,-2 -1,-3.5 Q-1.5,-4.5 -1,-5.5" stroke="${c.trunk}" stroke-width="1.8" fill="none"/><path d="M-1,-5 Q-3,-6 -3.5,-7" stroke="${c.trunk}" stroke-width="1" fill="none"/><path d="M-0.8,-4.5 Q1.5,-6 2.5,-7" stroke="${c.trunk}" stroke-width="0.9" fill="none"/><path d="M-1,-5.5 Q-0.5,-7 0,-8" stroke="${c.trunk}" stroke-width="0.6" fill="none"/><ellipse cx="0" cy="-9.5" rx="5.5" ry="3.8" fill="${c.cherryPetalPink}" opacity="0.9"/><ellipse cx="-2" cy="-11" rx="3.5" ry="2.2" fill="${c.cherryPetalPink}" opacity="0.8"/><ellipse cx="2" cy="-11" rx="3" ry="2" fill="${c.cherryPetalWhite}" opacity="0.65"/><ellipse cx="0" cy="-12.5" rx="2.5" ry="1.5" fill="${c.cherryPetalPink}" opacity="0.6"/><ellipse cx="1" cy="-12" rx="1.2" ry="0.6" fill="${c.cherryPetalWhite}" opacity="0.4"/><circle cx="-5" cy="-5" r="0.3" fill="${c.cherryPetalPink}" opacity="0.6" class="epic-glow-pulse"/><circle cx="4" cy="-4" r="0.25" fill="${c.cherryPetalWhite}" opacity="0.5" class="epic-glow-pulse"/><circle cx="-3" cy="-2" r="0.2" fill="${c.cherryPetalPink}" opacity="0.45" class="epic-glow-pulse"/><circle cx="2" cy="-1" r="0.2" fill="${c.cherryPetalWhite}" opacity="0.4" class="epic-glow-pulse"/><circle cx="-1" cy="0.5" r="0.18" fill="${c.cherryPetalPink}" opacity="0.35"/></g>`;
+}
+function renderAncientPortal(x, y, c) {
+  return `<g transform="translate(${x},${y})"><ellipse cx="0" cy="0.3" rx="4" ry="0.8" fill="${c.shadow}" opacity="0.15"/><rect x="-4.5" y="-9" width="2.2" height="9" fill="${c.rock}" rx="0.3"/><rect x="-4.5" y="-9" width="1.1" height="9" fill="${c.boulder}" opacity="0.3"/><rect x="2.3" y="-9" width="2.2" height="9" fill="${c.rock}" rx="0.3"/><rect x="3.4" y="-9" width="1.1" height="9" fill="${c.boulder}" opacity="0.3"/><path d="M-3.5,-9 Q0,-13 3.5,-9" fill="${c.rock}"/><path d="M-2.5,-9 Q0,-12 2.5,-9" fill="${c.boulder}" opacity="0.3"/><line x1="-3.5" y1="-3" x2="-3.5" y2="-4.5" stroke="${c.epicPortal}" stroke-width="0.3" opacity="0.4"/><circle cx="-3.5" cy="-6" r="0.3" fill="none" stroke="${c.epicPortal}" stroke-width="0.2" opacity="0.35"/><line x1="3.4" y1="-3" x2="3.4" y2="-4.5" stroke="${c.epicPortal}" stroke-width="0.3" opacity="0.4"/><circle cx="3.4" cy="-6" r="0.3" fill="none" stroke="${c.epicPortal}" stroke-width="0.2" opacity="0.35"/><ellipse cx="0" cy="-4.5" rx="2.5" ry="3.5" fill="${c.epicPortal}" opacity="0.35" class="epic-portal-swirl"/><ellipse cx="0" cy="-4.5" rx="1.5" ry="2.5" fill="${c.epicPortal}" opacity="0.25" class="epic-portal-swirl"/><ellipse cx="0" cy="-4.5" rx="0.6" ry="1" fill="${c.epicCrystal}" opacity="0.3" class="epic-portal-swirl"/><circle cx="0" cy="-11.5" r="0.4" fill="${c.epicPortal}" opacity="0.4" class="epic-glow-pulse"/></g>`;
+}
+var EPIC_RENDERERS = {
+  // Rare — Natural
+  mountFuji: renderMountFuji,
+  giantSequoia: renderGiantSequoia,
+  coralReef: renderCoralReef,
+  geyser: renderGeyser,
+  hotSpring: renderHotSpring,
+  grandCanyon: renderGrandCanyon,
+  oasis: renderOasis,
+  volcano: renderVolcano,
+  giantMushroom: renderGiantMushroom,
+  // Rare — Landmarks
+  colosseum: renderColosseum,
+  pagoda: renderPagoda,
+  torii: renderTorii,
+  eiffelTower: renderEiffelTower,
+  windmillGrand: renderWindmillGrand,
+  // Epic — Natural
+  aurora: renderAurora,
+  giantWaterfall: renderGiantWaterfall,
+  bambooGrove: renderBambooGrove,
+  glacierPeak: renderGlacierPeak,
+  bioluminescentPool: renderBioluminescentPool,
+  meteorCrater: renderMeteorCrater,
+  bonsaiGiant: renderBonsaiGiant,
+  // Epic — Landmarks
+  tajMahal: renderTajMahal,
+  stBasils: renderStBasils,
+  operaHouse: renderOperaHouse,
+  // Legendary
+  floatingIsland: renderFloatingIsland,
+  crystalSpire: renderCrystalSpire,
+  dragonNest: renderDragonNest,
+  worldTree: renderWorldTree,
+  sakuraEternal: renderSakuraEternal,
+  ancientPortal: renderAncientPortal
+};
+function renderEpicGlowDefs(mode) {
+  const tiers = [
+    { id: "epic-glow-rare", color: "#FFD700", darkOuter: 0, lightOuter: 0 },
+    { id: "epic-glow-epic", color: "#9B59B6", darkOuter: 0, lightOuter: 0 },
+    { id: "epic-glow-legendary", color: "#00CED1", darkOuter: 0, lightOuter: 0 }
+  ];
+  return tiers.map(
+    (t) => `<radialGradient id="${t.id}"><stop offset="0%" stop-color="${t.color}" stop-opacity="${mode === "dark" ? 0.4 : 0.3}"/><stop offset="100%" stop-color="${t.color}" stop-opacity="0"/></radialGradient>`
+  ).join("");
+}
+function renderEpicCSS() {
+  return [
+    `@keyframes epic-pulse { 0%,100% { opacity: 0.4; } 50% { opacity: 0.9; } }`,
+    `.epic-glow-pulse { animation: epic-pulse 3s ease-in-out infinite; }`,
+    `@keyframes epic-swirl { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`,
+    `.epic-portal-swirl { animation: epic-swirl 8s linear infinite; transform-origin: center; }`
+  ].join("\n");
+}
+function renderEpicBuildings(placed, weekPalettes) {
+  if (placed.length === 0) return "";
+  const parts = placed.map((epic) => {
+    const weekIdx = Math.min(epic.week, weekPalettes.length - 1);
+    const palette = weekPalettes[weekIdx];
+    const c = palette.assets;
+    const renderer = EPIC_RENDERERS[epic.type];
+    const glowId = `epic-glow-${epic.tier}`;
+    const glow = `<ellipse cx="${epic.cx}" cy="${epic.cy}" rx="8" ry="4" fill="url(#${glowId})" opacity="0.6"/>`;
+    const building = renderer(epic.cx, epic.cy, c);
+    return glow + building;
+  });
+  return `<g class="epic-buildings">${parts.join("")}</g>`;
 }
 
 // src/themes/terrain/biomes.ts
@@ -3351,6 +4441,7 @@ var terrainTheme = {
 };
 function renderMode(data, options, mode) {
   const hemisphere = options.hemisphere || "north";
+  const density = options.density ?? 5;
   const oldestDate = new Date(data.weeks[0]?.days[0]?.date || /* @__PURE__ */ new Date());
   const seasonRotation = computeSeasonRotation(oldestDate, hemisphere);
   const seed = hash(data.username + mode);
@@ -3371,9 +4462,17 @@ function renderMode(data, options, mode) {
   const originY = 6;
   const isoCells = getIsoCells(cells100, palette, originX, originY);
   const biomeMap = generateBiomeMap(52, 7, seed + 7919);
+  const epicSeed = hash(data.username + "epic" + String(data.year));
+  const { placed: epicPlaced, epicCells } = selectEpicBuildings(
+    isoCells,
+    epicSeed,
+    data.stats,
+    biomeMap
+  );
   const terrainCSS = renderTerrainCSS(isoCells, biomeMap);
   const assetCSS = renderAssetCSS();
-  const css = terrainCSS + "\n" + assetCSS;
+  const epicCSS = renderEpicCSS();
+  const css = terrainCSS + "\n" + assetCSS + "\n" + epicCSS;
   const isDark = mode === "dark";
   const celestials = renderCelestials(seed, palette, isDark);
   const clouds = renderClouds(seed, palette);
@@ -3393,17 +4492,22 @@ function renderMode(data, options, mode) {
     weekPalettes,
     variantSeed,
     biomeMap,
-    seasonRotation
+    seasonRotation,
+    density,
+    epicCells
   );
+  const epicBuildings = renderEpicBuildings(epicPlaced, weekPalettes);
   const snowParticles = renderSnowParticles(isoCells, seed, seasonRotation);
   const fallingPetals = renderFallingPetals(isoCells, seed, palette, seasonRotation);
   const fallingLeaves = renderFallingLeaves(isoCells, seed, palette, seasonRotation);
   const overlays = renderAnimatedOverlays(isoCells, palette);
   const anchorLevels = [0, 20, 45, 70, 95];
-  const levelColors = anchorLevels.map((l) => ({
-    hex: palette.getElevation(l).top,
-    opacity: l === 0 ? 0.5 : 1
-  }));
+  const levelColors = anchorLevels.map(
+    (l) => ({
+      hex: palette.getElevation(l).top,
+      opacity: l === 0 ? 0.5 : 1
+    })
+  );
   const themePalette = {
     text: palette.text,
     contribution: { levels: levelColors },
@@ -3411,14 +4515,17 @@ function renderMode(data, options, mode) {
   };
   const title = renderTitle(options.title, themePalette);
   const statsBar = renderStatsBar(data.stats, themePalette);
+  const epicDefs = epicPlaced.length > 0 ? `<defs>${renderEpicGlowDefs(mode)}</defs>` : "";
   const content = [
     svgStyle(css),
+    epicDefs,
     celestials,
     clouds,
     blocks,
     waterOverlays,
     waterRipples,
     assets,
+    epicBuildings,
     snowParticles,
     fallingPetals,
     fallingLeaves,
@@ -3426,10 +4533,7 @@ function renderMode(data, options, mode) {
     title,
     statsBar
   ].join("\n");
-  return svgRoot(
-    { width: options.width, height: options.height },
-    content
-  );
+  return svgRoot({ width: options.width, height: options.height }, content);
 }
 registerTheme(terrainTheme);
 export {

@@ -34,7 +34,8 @@ function makeWeeks(
       date.setDate(date.getDate() + d);
       const dateStr = date.toISOString().split('T')[0];
       const count = Math.max(0, Math.round(gen(w, d, rng)));
-      const level: 0 | 1 | 2 | 3 | 4 = count === 0 ? 0 : count <= 2 ? 1 : count <= 5 ? 2 : count <= 10 ? 3 : 4;
+      const level: 0 | 1 | 2 | 3 | 4 =
+        count === 0 ? 0 : count <= 2 ? 1 : count <= 5 ? 2 : count <= 10 ? 3 : 4;
       days.push({ date: dateStr, count, level });
     }
     weeks.push({ firstDay: days[0].date, days });
@@ -56,7 +57,12 @@ const mainWeeks = makeWeeks(77, (w, d, rng) => {
   }
   return 0;
 });
-const mainData = { weeks: mainWeeks, stats: computeStats(mainWeeks), year: 2025, username: 'maeul-sky' };
+const mainData = {
+  weeks: mainWeeks,
+  stats: computeStats(mainWeeks),
+  year: 2025,
+  username: 'maeul-sky',
+};
 const mainOutput = theme.render(mainData, { title: '@maeul-sky', width: 840, height: 240 });
 writeFileSync(join(assetsDir, 'preview-dark.svg'), mainOutput.dark);
 writeFileSync(join(assetsDir, 'preview-light.svg'), mainOutput.light);
@@ -66,7 +72,12 @@ console.log(`Main: ${mainData.stats.total} contributions`);
 const sparseWeeks = makeWeeks(42, (_w, _d, rng) => {
   return rng() > 0.88 ? Math.floor(rng() * 3) + 1 : 0;
 });
-const sparseData = { weeks: sparseWeeks, stats: computeStats(sparseWeeks), year: 2025, username: 'sparse' };
+const sparseData = {
+  weeks: sparseWeeks,
+  stats: computeStats(sparseWeeks),
+  year: 2025,
+  username: 'sparse',
+};
 const sparseOutput = theme.render(sparseData, { title: '@sparse', width: 840, height: 240 });
 writeFileSync(join(assetsDir, 'preview-sparse.svg'), sparseOutput.dark);
 console.log(`Sparse: ${sparseData.stats.total} contributions`);
@@ -78,6 +89,7 @@ const maxWeeks = makeWeeks(42, (_w, _d, rng) => {
 const maxData = { weeks: maxWeeks, stats: computeStats(maxWeeks), year: 2025, username: 'max' };
 const maxOutput = theme.render(maxData, { title: '@max', width: 840, height: 240 });
 writeFileSync(join(assetsDir, 'preview-max.svg'), maxOutput.dark);
+writeFileSync(join(assetsDir, 'preview-max-light.svg'), maxOutput.light);
 console.log(`Max: ${maxData.stats.total} contributions`);
 
 console.log('Done — all preview SVGs generated.');
